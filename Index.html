@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Museo 3D - Mitos y Leyendas del Pacífico</title>
   <style>
     /* ===== ESTILOS GLOBALES ===== */
@@ -254,137 +254,93 @@
       opacity: 0.7;
     }
 
-    /* ===== CONTROLES TÁCTILES PARA MÓVIL ===== */
-    #touch-controls {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: none;
-      z-index: 50;
-      pointer-events: none;
-    }
-    #touch-controls.active {
-      display: block;
-    }
-
-    /* Joystick izquierdo (movimiento) */
-    #joystick-container {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      width: 100px;
-      height: 100px;
-      background: rgba(184, 145, 92, 0.3);
-      border: 2px solid rgba(184, 145, 92, 0.6);
-      border-radius: 50%;
-      pointer-events: auto;
-      z-index: 50;
-      touch-action: none;
-    }
-    #joystick-handle {
-      position: absolute;
-      width: 50px;
-      height: 50px;
-      background: rgba(184, 145, 92, 0.7);
-      border: 1px solid #b8915c;
-      border-radius: 50%;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      cursor: grab;
-      box-shadow: 0 0 10px rgba(184, 145, 92, 0.5);
-    }
-
-    /* Botones de acción derechos */
-    #action-buttons {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 50;
-      pointer-events: auto;
-    }
-    .action-btn {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: rgba(184, 145, 92, 0.5);
-      border: 2px solid rgba(184, 145, 92, 0.8);
-      color: #f5efe6;
-      font-size: 1.5rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      touch-action: none;
-      user-select: none;
-    }
-    .action-btn:active {
-      background: rgba(184, 145, 92, 0.8);
-      box-shadow: 0 0 15px rgba(184, 145, 92, 0.8);
-      transform: scale(0.95);
-    }
-
-    /* Botón de lock/unlock */
-    #lock-btn {
-      width: 50px;
-      height: 50px;
-      background: rgba(100, 100, 100, 0.5);
-      border: 2px solid rgba(184, 145, 92, 0.6);
-      border-radius: 8px;
-      color: #f5efe6;
-      cursor: pointer;
-      font-size: 1.2rem;
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 50;
-      transition: all 0.2s ease;
-      pointer-events: auto;
-      touch-action: none;
-    }
-    #lock-btn:active {
-      background: rgba(100, 100, 100, 0.8);
-    }
-
-    /* Orientación vertical */
-    @media (max-width: 700px) and (orientation: portrait) {
-      #info-panel { width: 90%; padding: 15px 20px; bottom: 120px; }
+    @media (max-width: 700px) {
+      #info-panel { width: 90%; padding: 15px 20px; bottom: 20px; }
       #info-panel h2 { font-size: 1.5rem; }
       #info-panel p { font-size: 0.95rem; }
       #click-msg { font-size: 1.2rem; padding: 20px 25px; }
-      #instructions { display: none; }
+      #instructions { font-size: 0.75rem; padding: 8px 16px; white-space: normal; }
       #loading .progress-bar { width: 200px; }
-      #audio-controls { top: 10px; right: 10px; padding: 10px; display: none; }
+      #audio-controls { top: 10px; right: 10px; padding: 10px; }
       #audio-controls button { min-width: 118px; }
       #perf-badge { display: none; }
-      #touch-controls.active { display: block; }
-      #joystick-container { width: 90px; height: 90px; bottom: 20px; left: 20px; }
-      #joystick-handle { width: 45px; height: 45px; }
-      .action-btn { width: 55px; height: 55px; }
     }
 
-    /* Orientación horizontal */
-    @media (max-width: 1200px) and (orientation: landscape) {
-      #info-panel { width: 85%; padding: 12px 20px; bottom: 20px; max-width: 600px; }
-      #info-panel h2 { font-size: 1.3rem; }
-      #info-panel p { font-size: 0.9rem; }
-      #click-msg { font-size: 1.2rem; padding: 20px 25px; }
-      #instructions { display: none; }
-      #audio-controls { top: 10px; right: 10px; padding: 8px; display: none; }
-      #perf-badge { display: none; }
-      #touch-controls.active { display: block; }
-      #joystick-container { width: 80px; height: 80px; bottom: 15px; left: 15px; }
-      #joystick-handle { width: 40px; height: 40px; }
-      .action-btn { width: 50px; height: 50px; font-size: 1.2rem; }
-      #action-buttons { gap: 8px; }
-      #lock-btn { width: 45px; height: 45px; font-size: 1rem; top: 15px; left: 15px; }
+    /* ===== CONTROLES TÁCTILES (móvil) ===== */
+    /* Zona derecha: arrastrar con el dedo para mirar alrededor (equivalente al mouse) */
+    #touch-look-zone {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 55%;
+      height: 100%;
+      z-index: 150;
+      touch-action: none;
+      display: none;
     }
+    /* Zona izquierda: aquí vive el joystick virtual de movimiento */
+    #touch-move-zone {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 45%;
+      height: 100%;
+      z-index: 150;
+      touch-action: none;
+      display: none;
+    }
+    body.touch-controls #touch-look-zone,
+    body.touch-controls #touch-move-zone {
+      display: block;
+    }
+
+    #joystick-base {
+      position: fixed;
+      bottom: 90px;
+      left: 70px;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: rgba(20, 16, 10, 0.45);
+      border: 2px solid rgba(184, 145, 92, 0.6);
+      z-index: 160;
+      display: none;
+      pointer-events: none;
+    }
+    body.touch-controls #joystick-base { display: block; }
+    #joystick-stick {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 50px;
+      height: 50px;
+      margin: -25px;
+      border-radius: 50%;
+      background: rgba(184, 145, 92, 0.85);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      transition: transform 0.05s linear;
+    }
+
+    /* Botón de bloqueo de mirada (look) para que un toque corto no gire la cámara
+       sin querer mientras el usuario solo quiere tocar un cuadro o un botón de la UI */
+    #mobile-hint {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.75);
+      color: #f0e6d3;
+      padding: 22px 30px;
+      border-radius: 24px;
+      border: 2px solid #b8915c;
+      font-size: 1.05rem;
+      text-align: center;
+      z-index: 250;
+      max-width: 80%;
+      line-height: 1.5;
+      display: none;
+    }
+    body.touch-controls #mobile-hint.show { display: block; }
   </style>
 </head>
 <body>
@@ -419,19 +375,18 @@
     <button id="voice-btn" class="active">Narración<br><small>Activada</small></button>
   </div>
 
-  <!-- CONTROLES TÁCTILES PARA MÓVIL -->
-  <div id="touch-controls">
-    <button id="lock-btn" title="Bloquear/desbloquear control">🔓</button>
-    <div id="joystick-container">
-      <div id="joystick-handle"></div>
-    </div>
-    <div id="action-buttons">
-      <button class="action-btn" id="up-btn" title="Arriba">⬆️</button>
-      <button class="action-btn" id="down-btn" title="Abajo">⬇️</button>
-    </div>
-  </div>
-
   <div id="perf-badge">FPS: --</div>
+
+  <!-- ===== CONTROLES TÁCTILES (solo visibles en móvil) ===== -->
+  <div id="touch-move-zone"></div>
+  <div id="touch-look-zone"></div>
+  <div id="joystick-base"><div id="joystick-stick"></div></div>
+  <div id="mobile-hint">
+    📱 <strong>Modo móvil</strong><br>
+    Mitad izquierda: joystick para moverte<br>
+    Mitad derecha: arrastra para mirar alrededor<br>
+    <small>Toca un cuadro para ver su información</small>
+  </div>
 
   <!-- ===== SCRIPTS ===== -->
   <script type="importmap">
@@ -467,20 +422,11 @@
     const musicBtn = document.getElementById('music-btn');
     const voiceBtn = document.getElementById('voice-btn');
     const perfBadge = document.getElementById('perf-badge');
-
-    // Controles táctiles
-    const hasTouchInput = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
-    const touchControls = document.getElementById('touch-controls');
-    const joystickContainer = document.getElementById('joystick-container');
-    const joystickHandle = document.getElementById('joystick-handle');
-    const lockBtn = document.getElementById('lock-btn');
-    const upBtn = document.getElementById('up-btn');
-    const downBtn = document.getElementById('down-btn');
-
-    // Mostrar controles táctiles solo en móviles
-    if (hasTouchInput) {
-      touchControls.classList.add('active');
-    }
+    const touchMoveZone = document.getElementById('touch-move-zone');
+    const touchLookZone = document.getElementById('touch-look-zone');
+    const joystickBase = document.getElementById('joystick-base');
+    const joystickStick = document.getElementById('joystick-stick');
+    const mobileHint = document.getElementById('mobile-hint');
 
     // ================================================================
     //  AUDIO
@@ -690,7 +636,7 @@
       {
         titulo: 'EL DIABLO DEL MONTE',
         desc: 'La leyenda del "Dueño del Monte" (o Viejo del Monte/Kiwíkgolo) describe a un ente folclórico de México, Centroamérica y Panamá que vigila bosques y montañas. Se le representa como un gigante peludo o sabanero monstruoso, a veces con un solo ojo brillante, que castiga a quienes destruyen la naturaleza o cazan injustificadamente.',
-        img: 'Images/El-Diablo-Del-Monte.png'
+        img: 'Images/El-Diablo-del-Monte.png'
       }
     ];
 
@@ -698,6 +644,10 @@
     //  DETECCIÓN DE CAPACIDAD DEL DISPOSITIVO (rendimiento adaptativo)
     // ================================================================
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    // Detección de "es táctil" más amplia que isMobile: cubre iPadOS (que se
+    // identifica como Mac con touch) y tablets Android en modo escritorio.
+    // Se usa para decidir si mostramos joystick + arrastre en vez de WASD/mouse.
+    const isTouchDevice = isMobile || (navigator.maxTouchPoints > 0 && window.matchMedia('(pointer: coarse)').matches);
     const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2);
     const QUALITY = {
       shadowMapSize: isMobile ? 512 : 1024,
@@ -751,10 +701,21 @@
       clickMsg.classList.add('show');
       instructions.classList.add('hidden');
     });
-    renderer.domElement.addEventListener('click', () => {
-      if (!controls.isLocked) controls.lock();
-      if (musicEnabled) startAmbientSound();
-    });
+
+    if (isTouchDevice) {
+      // En táctil no existe Pointer Lock real (ni tiene sentido: no hay cursor
+      // que ocultar). La cámara se controla a mano con el arrastre de la zona
+      // derecha, así que activamos un modo "siempre activo" sin depender de
+      // controls.lock(), y mostramos los controles e instrucciones propias.
+      document.body.classList.add('touch-controls');
+      instructions.style.display = 'none';
+      clickMsg.style.display = 'none';
+    } else {
+      renderer.domElement.addEventListener('click', () => {
+        if (!controls.isLocked) controls.lock();
+        if (musicEnabled) startAmbientSound();
+      });
+    }
 
     // ================================================================
     //  LUCES — paleta cálida, optimizadas (una sola fuente con sombra)
@@ -1963,161 +1924,117 @@
     });
 
     // ================================================================
-    //  CONTROLES TÁCTILES (Joystick + Botones)
+    //  CONTROLES TÁCTILES: joystick virtual (mover) + arrastre (mirar)
     // ================================================================
-    let touchActive = false;
-    let joystickPointerId = null;
-    const joystickRadius = 50; // radio del joystick
-    const joystickDeadzone = 15;
+    // moveVector reemplaza a "keys" cuando hay joystick activo: da magnitud
+    // analógica (-1..1 en cada eje) en vez de solo encendido/apagado, así el
+    // movimiento es más suave que con botones direccionales.
+    const moveVector = { x: 0, y: 0 };
+    let joystickTouchId = null;
+    let joystickOriginX = 0;
+    let joystickOriginY = 0;
+    const joystickMaxRadius = 45; // debe coincidir aprox. con el radio visual de joystick-base
 
-    // Joystick táctil
-    joystickContainer.addEventListener('pointerdown', (e) => {
-      if (!hasTouchInput && e.pointerType !== 'mouse') return;
-      touchActive = true;
-      joystickPointerId = e.pointerId;
-      joystickContainer.setPointerCapture?.(e.pointerId);
-      handleJoystickMove(e);
-      e.preventDefault();
-    });
+    let lookTouchId = null;
+    let lastLookX = 0;
+    let lastLookY = 0;
+    // Sensibilidad de arrastre: grados (en radianes) por píxel desplazado.
+    const touchLookSensitivity = 0.0035;
+    // Yaw/pitch acumulados manualmente porque PointerLockControls no se usa
+    // en táctil (no hay lock real); rotamos la cámara directamente.
+    let touchYaw = 0;
+    let touchPitch = 0;
 
-    document.addEventListener('pointermove', (e) => {
-      if (!touchActive || joystickPointerId === null || e.pointerId !== joystickPointerId) return;
-      handleJoystickMove(e);
-      e.preventDefault();
-    });
-
-    function endJoystickPointer(e) {
-      if (joystickPointerId !== null && e.pointerId !== joystickPointerId) return;
-      touchActive = false;
-      joystickPointerId = null;
-      resetJoystick();
-      keys.w = false; keys.a = false; keys.s = false; keys.d = false;
+    function clampPitch(p) {
+      const limit = Math.PI / 2 - 0.05;
+      return Math.max(-limit, Math.min(limit, p));
     }
 
-    document.addEventListener('pointerup', endJoystickPointer);
-    document.addEventListener('pointercancel', endJoystickPointer);
+    if (isTouchDevice) {
+      // --- Joystick de movimiento (zona izquierda) ---
+      touchMoveZone.addEventListener('touchstart', (e) => {
+        if (joystickTouchId !== null) return;
+        const t = e.changedTouches[0];
+        joystickTouchId = t.identifier;
+        joystickOriginX = t.clientX;
+        joystickOriginY = t.clientY;
+        joystickBase.style.left = (t.clientX - 55) + 'px';
+        joystickBase.style.bottom = (window.innerHeight - t.clientY - 55) + 'px';
+        joystickBase.style.top = 'auto';
+        e.preventDefault();
+      }, { passive: false });
 
-    function handleJoystickMove(point) {
-      const rect = joystickContainer.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      
-      const dx = point.clientX - centerX;
-      const dy = point.clientY - centerY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      let limitX = dx;
-      let limitY = dy;
-      
-      if (distance > joystickRadius) {
-        limitX = (dx / distance) * joystickRadius;
-        limitY = (dy / distance) * joystickRadius;
-      }
-      
-      joystickHandle.style.transform = `translate(calc(-50% + ${limitX}px), calc(-50% + ${limitY}px))`;
-      
-      // Convertir posición a movimiento de teclas
-      const angle = Math.atan2(dy, dx);
-      const distPercent = Math.min(distance / joystickRadius, 1);
-      
-      // Reset keys
-      keys.w = false; keys.a = false; keys.s = false; keys.d = false;
-      
-      if (distPercent > (joystickDeadzone / joystickRadius)) {
-        // Dividir en 8 direcciones
-        const octant = Math.round((angle + Math.PI) / (Math.PI / 4)) % 8;
-        switch(octant) {
-          case 0: keys.d = true; break;                     // Derecha
-          case 1: keys.d = true; keys.w = true; break;      // Arriba-Derecha
-          case 2: keys.w = true; break;                      // Arriba
-          case 3: keys.a = true; keys.w = true; break;      // Arriba-Izquierda
-          case 4: keys.a = true; break;                      // Izquierda
-          case 5: keys.a = true; keys.s = true; break;      // Abajo-Izquierda
-          case 6: keys.s = true; break;                      // Abajo
-          case 7: keys.d = true; keys.s = true; break;      // Abajo-Derecha
+      touchMoveZone.addEventListener('touchmove', (e) => {
+        for (const t of e.changedTouches) {
+          if (t.identifier !== joystickTouchId) continue;
+          let dx = t.clientX - joystickOriginX;
+          let dy = t.clientY - joystickOriginY;
+          const dist = Math.min(Math.hypot(dx, dy), joystickMaxRadius);
+          const angle = Math.atan2(dy, dx);
+          const clampedX = Math.cos(angle) * dist;
+          const clampedY = Math.sin(angle) * dist;
+          joystickStick.style.transform = `translate(${clampedX}px, ${clampedY}px)`;
+          moveVector.x = clampedX / joystickMaxRadius;
+          moveVector.y = clampedY / joystickMaxRadius;
+        }
+        e.preventDefault();
+      }, { passive: false });
+
+      function resetJoystick(e) {
+        for (const t of e.changedTouches) {
+          if (t.identifier !== joystickTouchId) continue;
+          joystickTouchId = null;
+          moveVector.x = 0;
+          moveVector.y = 0;
+          joystickStick.style.transform = 'translate(0px, 0px)';
         }
       }
-    }
+      touchMoveZone.addEventListener('touchend', resetJoystick);
+      touchMoveZone.addEventListener('touchcancel', resetJoystick);
 
-    function resetJoystick() {
-      joystickHandle.style.transform = 'translate(-50%, -50%)';
-    }
+      // --- Arrastre de cámara (zona derecha) ---
+      touchLookZone.addEventListener('touchstart', (e) => {
+        if (lookTouchId !== null) return;
+        const t = e.changedTouches[0];
+        lookTouchId = t.identifier;
+        lastLookX = t.clientX;
+        lastLookY = t.clientY;
+        // Primer toque: arranca el audio ambiental (gesto de usuario requerido
+        // por los navegadores para permitir reproducir audio) y oculta la ayuda.
+        if (musicEnabled) startAmbientSound();
+        mobileHint.classList.remove('show');
+        e.preventDefault();
+      }, { passive: false });
 
-    // Botones de acción
-    let upPressed = false, downPressed = false;
+      touchLookZone.addEventListener('touchmove', (e) => {
+        for (const t of e.changedTouches) {
+          if (t.identifier !== lookTouchId) continue;
+          const dx = t.clientX - lastLookX;
+          const dy = t.clientY - lastLookY;
+          lastLookX = t.clientX;
+          lastLookY = t.clientY;
+          touchYaw -= dx * touchLookSensitivity;
+          touchPitch = clampPitch(touchPitch - dy * touchLookSensitivity);
+        }
+        e.preventDefault();
+      }, { passive: false });
 
-    function pressForward() {
-      upPressed = true;
-      keys.w = true;
-    }
-
-    function releaseForward() {
-      upPressed = false;
-      if (!downPressed) keys.w = false;
-    }
-
-    function pressBackward() {
-      downPressed = true;
-      keys.s = true;
-    }
-
-    function releaseBackward() {
-      downPressed = false;
-      if (!upPressed) keys.s = false;
-    }
-
-    upBtn.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      pressForward();
-    });
-    upBtn.addEventListener('pointerup', (e) => {
-      e.preventDefault();
-      releaseForward();
-    });
-    upBtn.addEventListener('pointercancel', releaseForward);
-    upBtn.addEventListener('pointerleave', releaseForward);
-
-    downBtn.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      pressBackward();
-    });
-    downBtn.addEventListener('pointerup', (e) => {
-      e.preventDefault();
-      releaseBackward();
-    });
-    downBtn.addEventListener('pointercancel', releaseBackward);
-    downBtn.addEventListener('pointerleave', releaseBackward);
-
-    // Botón de bloqueo (lock/unlock)
-    let controlsLocked = false;
-    
-    function toggleLock() {
-      if (!controlsLocked) {
-        if (!controls.isLocked) controls.lock();
-        controlsLocked = true;
-        lockBtn.textContent = '🔒';
-      } else {
-        if (controls.isLocked) controls.unlock();
-        controlsLocked = false;
-        lockBtn.textContent = '🔓';
+      function releaseLook(e) {
+        for (const t of e.changedTouches) {
+          if (t.identifier === lookTouchId) lookTouchId = null;
+        }
       }
-    }
-    
-    lockBtn.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleLock();
-    });
+      touchLookZone.addEventListener('touchend', releaseLook);
+      touchLookZone.addEventListener('touchcancel', releaseLook);
 
-    // Actualizar estado del lock button cuando se bloqueen/desbloqueen los controles
-    controls.addEventListener('lock', () => {
-      controlsLocked = true;
-      lockBtn.textContent = '🔒';
-    });
-    controls.addEventListener('unlock', () => {
-      controlsLocked = false;
-      lockBtn.textContent = '🔓';
-    });
+      // Inicializar yaw/pitch a partir de la orientación inicial de la cámara
+      // para que el primer arrastre no provoque un salto brusco de vista.
+      touchYaw = camera.rotation.y;
+      touchPitch = camera.rotation.x;
+
+      // Mostrar el aviso de controles una vez termina la intro
+      setTimeout(() => mobileHint.classList.add('show'), 600);
+    }
 
     // ================================================================
     //  TIMEOUT GLOBAL
@@ -2169,25 +2086,55 @@
       pointLight.intensity = 1.1 + Math.sin(elapsed * 1.2) * 0.18;
       updateNPCs(delta);
 
-      if (controls.isLocked && !introActive) {
-        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-        forward.y = 0; right.y = 0;
-        forward.normalize(); right.normalize();
-        const moveVec = new THREE.Vector3(0, 0, 0);
-        if (keys.w) moveVec.add(forward);
-        if (keys.s) moveVec.sub(forward);
-        if (keys.a) moveVec.sub(right);
-        if (keys.d) moveVec.add(right);
-        if (moveVec.length() > 0) {
-          moveVec.normalize().multiplyScalar(moveSpeed);
-          camera.position.add(moveVec);
+      if (!introActive) {
+        if (isTouchDevice) {
+          // Aplicar rotación acumulada por arrastre (yaw alrededor de Y, pitch en X,
+          // en ese orden para evitar el "roll" típico de aplicar Euler XYZ directo).
+          camera.rotation.order = 'YXZ';
+          camera.rotation.y = touchYaw;
+          camera.rotation.x = touchPitch;
+
+          if (moveVector.x !== 0 || moveVector.y !== 0) {
+            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+            forward.y = 0; right.y = 0;
+            forward.normalize(); right.normalize();
+            // moveVector.y > 0 significa que el dedo se arrastró hacia abajo,
+            // lo que en un joystick significa "retroceder" -> se resta forward.
+            const moveVec = new THREE.Vector3(0, 0, 0);
+            moveVec.add(forward.multiplyScalar(-moveVector.y));
+            moveVec.add(right.multiplyScalar(moveVector.x));
+            const magnitude = Math.min(Math.hypot(moveVector.x, moveVector.y), 1);
+            if (moveVec.length() > 0) {
+              moveVec.normalize().multiplyScalar(moveSpeed * magnitude);
+              camera.position.add(moveVec);
+            }
+          }
+          const margin = 0.8;
+          const limit = roomSize/2 - margin;
+          camera.position.x = Math.max(-limit, Math.min(limit, camera.position.x));
+          camera.position.z = Math.max(-limit, Math.min(limit, camera.position.z));
+          camera.position.y = 1.7;
+        } else if (controls.isLocked) {
+          const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+          const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+          forward.y = 0; right.y = 0;
+          forward.normalize(); right.normalize();
+          const moveVec = new THREE.Vector3(0, 0, 0);
+          if (keys.w) moveVec.add(forward);
+          if (keys.s) moveVec.sub(forward);
+          if (keys.a) moveVec.sub(right);
+          if (keys.d) moveVec.add(right);
+          if (moveVec.length() > 0) {
+            moveVec.normalize().multiplyScalar(moveSpeed);
+            camera.position.add(moveVec);
+          }
+          const margin = 0.8;
+          const limit = roomSize/2 - margin;
+          camera.position.x = Math.max(-limit, Math.min(limit, camera.position.x));
+          camera.position.z = Math.max(-limit, Math.min(limit, camera.position.z));
+          camera.position.y = 1.7;
         }
-        const margin = 0.8;
-        const limit = roomSize/2 - margin;
-        camera.position.x = Math.max(-limit, Math.min(limit, camera.position.x));
-        camera.position.z = Math.max(-limit, Math.min(limit, camera.position.z));
-        camera.position.y = 1.7;
       }
 
       if (!introActive) updateHighlight();
