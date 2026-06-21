@@ -254,16 +254,134 @@
       opacity: 0.7;
     }
 
-    @media (max-width: 700px) {
-      #info-panel { width: 90%; padding: 15px 20px; bottom: 20px; }
+    /* ===== CONTROLES TÁCTILES PARA MÓVIL ===== */
+    #touch-controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      z-index: 50;
+      pointer-events: none;
+    }
+    #touch-controls.active {
+      display: block;
+    }
+
+    /* Joystick izquierdo (movimiento) */
+    #joystick-container {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 100px;
+      height: 100px;
+      background: rgba(184, 145, 92, 0.3);
+      border: 2px solid rgba(184, 145, 92, 0.6);
+      border-radius: 50%;
+      pointer-events: auto;
+      z-index: 50;
+      touch-action: none;
+    }
+    #joystick-handle {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background: rgba(184, 145, 92, 0.7);
+      border: 1px solid #b8915c;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      cursor: grab;
+      box-shadow: 0 0 10px rgba(184, 145, 92, 0.5);
+    }
+
+    /* Botones de acción derechos */
+    #action-buttons {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 50;
+      pointer-events: auto;
+    }
+    .action-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(184, 145, 92, 0.5);
+      border: 2px solid rgba(184, 145, 92, 0.8);
+      color: #f5efe6;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      user-select: none;
+    }
+    .action-btn:active {
+      background: rgba(184, 145, 92, 0.8);
+      box-shadow: 0 0 15px rgba(184, 145, 92, 0.8);
+      transform: scale(0.95);
+    }
+
+    /* Botón de lock/unlock */
+    #lock-btn {
+      width: 50px;
+      height: 50px;
+      background: rgba(100, 100, 100, 0.5);
+      border: 2px solid rgba(184, 145, 92, 0.6);
+      border-radius: 8px;
+      color: #f5efe6;
+      cursor: pointer;
+      font-size: 1.2rem;
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 50;
+      transition: all 0.2s ease;
+    }
+    #lock-btn:active {
+      background: rgba(100, 100, 100, 0.8);
+    }
+
+    /* Orientación vertical */
+    @media (max-width: 700px) and (orientation: portrait) {
+      #info-panel { width: 90%; padding: 15px 20px; bottom: 120px; }
       #info-panel h2 { font-size: 1.5rem; }
       #info-panel p { font-size: 0.95rem; }
       #click-msg { font-size: 1.2rem; padding: 20px 25px; }
-      #instructions { font-size: 0.75rem; padding: 8px 16px; white-space: normal; }
+      #instructions { display: none; }
       #loading .progress-bar { width: 200px; }
-      #audio-controls { top: 10px; right: 10px; padding: 10px; }
+      #audio-controls { top: 10px; right: 10px; padding: 10px; display: none; }
       #audio-controls button { min-width: 118px; }
       #perf-badge { display: none; }
+      #touch-controls.active { display: block; }
+      #joystick-container { width: 90px; height: 90px; bottom: 20px; left: 20px; }
+      #joystick-handle { width: 45px; height: 45px; }
+      .action-btn { width: 55px; height: 55px; }
+    }
+
+    /* Orientación horizontal */
+    @media (max-width: 1200px) and (orientation: landscape) {
+      #info-panel { width: 85%; padding: 12px 20px; bottom: 20px; max-width: 600px; }
+      #info-panel h2 { font-size: 1.3rem; }
+      #info-panel p { font-size: 0.9rem; }
+      #click-msg { font-size: 1.2rem; padding: 20px 25px; }
+      #instructions { display: none; }
+      #audio-controls { top: 10px; right: 10px; padding: 8px; display: none; }
+      #perf-badge { display: none; }
+      #touch-controls.active { display: block; }
+      #joystick-container { width: 80px; height: 80px; bottom: 15px; left: 15px; }
+      #joystick-handle { width: 40px; height: 40px; }
+      .action-btn { width: 50px; height: 50px; font-size: 1.2rem; }
+      #action-buttons { gap: 8px; }
+      #lock-btn { width: 45px; height: 45px; font-size: 1rem; top: 15px; left: 15px; }
     }
   </style>
 </head>
@@ -297,6 +415,18 @@
     <div class="audio-title">Audio</div>
     <button id="music-btn" class="active">Música ambiente<br><small>Activada</small></button>
     <button id="voice-btn" class="active">Narración<br><small>Activada</small></button>
+  </div>
+
+  <!-- CONTROLES TÁCTILES PARA MÓVIL -->
+  <div id="touch-controls">
+    <button id="lock-btn" title="Bloquear/desbloquear control">🔓</button>
+    <div id="joystick-container">
+      <div id="joystick-handle"></div>
+    </div>
+    <div id="action-buttons">
+      <button class="action-btn" id="up-btn" title="Arriba">⬆️</button>
+      <button class="action-btn" id="down-btn" title="Abajo">⬇️</button>
+    </div>
   </div>
 
   <div id="perf-badge">FPS: --</div>
@@ -335,6 +465,20 @@
     const musicBtn = document.getElementById('music-btn');
     const voiceBtn = document.getElementById('voice-btn');
     const perfBadge = document.getElementById('perf-badge');
+
+    // Controles táctiles
+    const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const touchControls = document.getElementById('touch-controls');
+    const joystickContainer = document.getElementById('joystick-container');
+    const joystickHandle = document.getElementById('joystick-handle');
+    const lockBtn = document.getElementById('lock-btn');
+    const upBtn = document.getElementById('up-btn');
+    const downBtn = document.getElementById('down-btn');
+
+    // Mostrar controles táctiles solo en móviles
+    if (isMobileDevice) {
+      touchControls.classList.add('active');
+    }
 
     // ================================================================
     //  AUDIO
@@ -1814,6 +1958,139 @@
         case 'KeyD': keys.d = false; e.preventDefault(); break;
         default: break;
       }
+    });
+
+    // ================================================================
+    //  CONTROLES TÁCTILES (Joystick + Botones)
+    // ================================================================
+    let touchActive = false;
+    let joystickTouchId = null;
+    const joystickRadius = 50; // radio del joystick
+    const joystickDeadzone = 15;
+
+    // Joystick táctil
+    joystickContainer.addEventListener('touchstart', (e) => {
+      touchActive = true;
+      joystickTouchId = e.touches[0].identifier;
+      handleJoystickMove(e.touches[0]);
+    }, false);
+
+    document.addEventListener('touchmove', (e) => {
+      if (!touchActive || joystickTouchId === null) return;
+      for (let touch of e.touches) {
+        if (touch.identifier === joystickTouchId) {
+          handleJoystickMove(touch);
+          break;
+        }
+      }
+    }, false);
+
+    document.addEventListener('touchend', (e) => {
+      for (let touch of e.changedTouches) {
+        if (touch.identifier === joystickTouchId) {
+          touchActive = false;
+          joystickTouchId = null;
+          resetJoystick();
+          keys.w = false; keys.a = false; keys.s = false; keys.d = false;
+          break;
+        }
+      }
+    }, false);
+
+    function handleJoystickMove(touch) {
+      const rect = joystickContainer.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      const dx = touch.clientX - centerX;
+      const dy = touch.clientY - centerY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      let limitX = dx;
+      let limitY = dy;
+      
+      if (distance > joystickRadius) {
+        limitX = (dx / distance) * joystickRadius;
+        limitY = (dy / distance) * joystickRadius;
+      }
+      
+      joystickHandle.style.transform = `translate(calc(-50% + ${limitX}px), calc(-50% + ${limitY}px))`;
+      
+      // Convertir posición a movimiento de teclas
+      const angle = Math.atan2(dy, dx);
+      const distPercent = Math.min(distance / joystickRadius, 1);
+      
+      // Reset keys
+      keys.w = false; keys.a = false; keys.s = false; keys.d = false;
+      
+      if (distPercent > (joystickDeadzone / joystickRadius)) {
+        // Dividir en 8 direcciones
+        const octant = Math.round((angle + Math.PI) / (Math.PI / 4)) % 8;
+        switch(octant) {
+          case 0: keys.d = true; break;                     // Derecha
+          case 1: keys.d = true; keys.w = true; break;      // Arriba-Derecha
+          case 2: keys.w = true; break;                      // Arriba
+          case 3: keys.a = true; keys.w = true; break;      // Arriba-Izquierda
+          case 4: keys.a = true; break;                      // Izquierda
+          case 5: keys.a = true; keys.s = true; break;      // Abajo-Izquierda
+          case 6: keys.s = true; break;                      // Abajo
+          case 7: keys.d = true; keys.s = true; break;      // Abajo-Derecha
+        }
+      }
+    }
+
+    function resetJoystick() {
+      joystickHandle.style.transform = 'translate(-50%, -50%)';
+    }
+
+    // Botones de acción
+    let upPressed = false, downPressed = false;
+
+    upBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      upPressed = true;
+      keys.w = true;
+    });
+    upBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      upPressed = false;
+      if (!downPressed) keys.w = false;
+    });
+
+    downBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      downPressed = true;
+      keys.s = true;
+    });
+    downBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      downPressed = false;
+      if (!upPressed) keys.s = false;
+    });
+
+    // Botón de bloqueo (lock/unlock)
+    let controlsLocked = false;
+    lockBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (!controlsLocked) {
+        if (!controls.isLocked) controls.lock();
+        controlsLocked = true;
+        lockBtn.textContent = '🔒';
+      } else {
+        if (controls.isLocked) controls.unlock();
+        controlsLocked = false;
+        lockBtn.textContent = '🔓';
+      }
+    });
+
+    // Actualizar estado del lock button cuando se bloqueen/desbloqueen los controles
+    controls.addEventListener('lock', () => {
+      controlsLocked = true;
+      lockBtn.textContent = '🔒';
+    });
+    controls.addEventListener('unlock', () => {
+      controlsLocked = false;
+      lockBtn.textContent = '🔓';
     });
 
     // ================================================================
