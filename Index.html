@@ -2055,7 +2055,9 @@
         const newComp = (newAngle === 180) ? Math.PI : 0;
         const newMult = (newAngle === 180) ? -1 : 1;
         // Ajustar touchYaw para mantener la misma vista relativa tras el cambio.
-        touchYaw += (newComp - orientationCompensation);
+        // Restamos el delta para evitar una rotación brusca de 180° al cambiar
+        // la orientación (evita que la vista "se dé vuelta" automáticamente).
+        touchYaw -= (newComp - orientationCompensation);
         orientationCompensation = newComp;
         orientationMultiplier = newMult;
         _orientationAngle = newAngle;
