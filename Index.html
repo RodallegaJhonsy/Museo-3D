@@ -1304,7 +1304,7 @@
       const imgX = margin;
       const imgY = margin;
       const imgW = canvas.width - margin*2;
-      const imgH = 720; // más altura para la imagen
+      const imgH = 860; // prioriza la imagen para que se aprecie mejor
 
       // Cargar imagen y dibujar con alta calidad
       const img = await loadImageWithFallback(leyenda.img);
@@ -1327,16 +1327,20 @@
       ctx.textBaseline = 'top';
       ctx.fillText(leyenda.titulo, canvas.width/2, imgY + imgH + 24);
 
-      // Descripción con mejor legibilidad
-      ctx.font = '32px Georgia';
+      // Descripción breve para no quitar protagonismo a la imagen
+      ctx.font = '28px Georgia';
       ctx.fillStyle = '#d8c8a8';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       const lines = wrapText(ctx, leyenda.desc, canvas.width - 100);
-      let lineY = imgY + imgH + 100;
-      lines.forEach(line => {
+      const previewLines = lines.slice(0, 3);
+      if (lines.length > 3) {
+        previewLines[2] = previewLines[2].replace(/[.,;:!?]?$/, '...');
+      }
+      let lineY = imgY + imgH + 96;
+      previewLines.forEach(line => {
         ctx.fillText(line, canvas.width/2, lineY);
-        lineY += 44;
+        lineY += 38;
       });
 
       // Crear textura con filtros de alta calidad
@@ -1396,22 +1400,26 @@
       spotLights.push(spot);
     }
 
-    // Colocar 12 cuadros (3 por pared)
+    // Colocar 12 cuadros (4 por pared en fondo + laterales):
+    // deja despejada la pared de la entrada para una mejor lectura visual.
     const halfRoom = roomSize/2 - 0.7;
     const yPos = 1.9;
     const paintingPositions = [
-      { pos: { x: -4.0, y: yPos, z: -halfRoom }, rotY: 0 },
-      { pos: { x: 0, y: yPos, z: -halfRoom }, rotY: 0 },
-      { pos: { x: 4.0, y: yPos, z: -halfRoom }, rotY: 0 },
-      { pos: { x: -4.0, y: yPos, z: halfRoom }, rotY: Math.PI },
-      { pos: { x: 0, y: yPos, z: halfRoom }, rotY: Math.PI },
-      { pos: { x: 4.0, y: yPos, z: halfRoom }, rotY: Math.PI },
-      { pos: { x: -halfRoom, y: yPos, z: -3.5 }, rotY: Math.PI/2 },
-      { pos: { x: -halfRoom, y: yPos, z: 0 }, rotY: Math.PI/2 },
-      { pos: { x: -halfRoom, y: yPos, z: 3.5 }, rotY: Math.PI/2 },
-      { pos: { x: halfRoom, y: yPos, z: -3.5 }, rotY: -Math.PI/2 },
-      { pos: { x: halfRoom, y: yPos, z: 0 }, rotY: -Math.PI/2 },
-      { pos: { x: halfRoom, y: yPos, z: 3.5 }, rotY: -Math.PI/2 }
+      // Pared del fondo (4)
+      { pos: { x: -5.4, y: yPos, z: -halfRoom }, rotY: 0 },
+      { pos: { x: -1.8, y: yPos, z: -halfRoom }, rotY: 0 },
+      { pos: { x: 1.8, y: yPos, z: -halfRoom }, rotY: 0 },
+      { pos: { x: 5.4, y: yPos, z: -halfRoom }, rotY: 0 },
+      // Pared izquierda (4)
+      { pos: { x: -halfRoom, y: yPos, z: -5.4 }, rotY: Math.PI/2 },
+      { pos: { x: -halfRoom, y: yPos, z: -1.8 }, rotY: Math.PI/2 },
+      { pos: { x: -halfRoom, y: yPos, z: 1.8 }, rotY: Math.PI/2 },
+      { pos: { x: -halfRoom, y: yPos, z: 5.4 }, rotY: Math.PI/2 },
+      // Pared derecha (4)
+      { pos: { x: halfRoom, y: yPos, z: 5.4 }, rotY: -Math.PI/2 },
+      { pos: { x: halfRoom, y: yPos, z: 1.8 }, rotY: -Math.PI/2 },
+      { pos: { x: halfRoom, y: yPos, z: -1.8 }, rotY: -Math.PI/2 },
+      { pos: { x: halfRoom, y: yPos, z: -5.4 }, rotY: -Math.PI/2 }
     ];
 
     // Carga con progreso
@@ -1897,8 +1905,11 @@
           const eIntro = new THREE.Euler().setFromQuaternion(touchQuat, 'YXZ');
           touchYaw = eIntro.y;
           touchPitch = eIntro.x;
+          // En móvil no mostramos clickMsg ("Haz clic para explorar"), ya que
+          // no aplica; en su lugar el mobile-hint ya está visible.
+        } else {
+          clickMsg.classList.add('show');
         }
-        clickMsg.classList.add('show');
         return;
       }
       const t = easeInOutCubic(introProgress);
@@ -1947,14 +1958,21 @@
     let lastLookX = 0;
     let lastLookY = 0;
     // Sensibilidad de arrastre: grados (en radianes) por píxel desplazado.
-    const touchLookSensitivity = 0.0035;
+    const touchLookSensitivity = 0.004;
     // Yaw/pitch acumulados manualmente porque PointerLockControls no se usa
     // en táctil (no hay lock real); rotamos la cámara directamente.
     // Mantener también una quaternion para aplicar rotaciones relativas
     // y evitar inversiones cuando yaw está cerca de π.
     let touchYaw = 0;
     let touchPitch = 0;
-    let touchQuat = new THREE.Quaternion();
+    // Inicializar touchQuat con la orientación actual de la cámara para que
+    // el primer drag no provoque un salto brusco.
+    let touchQuat = camera.quaternion.clone();
+
+    // Declarar orientationMultiplier aquí para que esté disponible en touchmove
+    // (se asigna definitivamente al inicializar los controles táctiles más abajo).
+    let orientationMultiplier = 1;
+    let orientationCompensation = 0;
 
     function clampPitch(p) {
       const limit = Math.PI / 2 - 0.05;
@@ -2025,7 +2043,7 @@
           lastLookX = t.clientX;
           lastLookY = t.clientY;
           // Deltas de rotación: yaw alrededor de Y (world), pitch alrededor del eje right local.
-          const yawDelta = -dx * touchLookSensitivity * (typeof orientationMultiplier !== 'undefined' ? orientationMultiplier : 1);
+          const yawDelta = -dx * touchLookSensitivity * orientationMultiplier;
           const pitchDelta = -dy * touchLookSensitivity;
 
           // Aplicar yaw en el espacio world: premultiplicar
@@ -2069,11 +2087,12 @@
       // Si la pantalla está rotada 180°, compensamos con PI y cambiamos el
       // signo de la entrada táctil horizontal para que el arrastre siga siendo
       // natural para el usuario.
-      let orientationCompensation = (_orientationAngle === 180) ? Math.PI : 0;
-      let orientationMultiplier = (_orientationAngle === 180) ? -1 : 1;
+      orientationCompensation = (_orientationAngle === 180) ? Math.PI : 0;
+      orientationMultiplier = (_orientationAngle === 180) ? -1 : 1;
 
       // Inicializar quaternion de control aplicando la compensación inicial.
-      touchQuat.copy(camera.quaternion);
+      // (touchQuat ya fue inicializado con camera.quaternion al declararse;
+      //  aquí solo aplicamos la compensación de orientación si es necesario.)
       if (orientationCompensation !== 0) {
         const qc = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), orientationCompensation);
         touchQuat.premultiply(qc);
