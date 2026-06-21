@@ -345,6 +345,8 @@
       left: 20px;
       z-index: 50;
       transition: all 0.2s ease;
+      pointer-events: auto;
+      touch-action: none;
     }
     #lock-btn:active {
       background: rgba(100, 100, 100, 0.8);
@@ -467,7 +469,7 @@
     const perfBadge = document.getElementById('perf-badge');
 
     // Controles táctiles
-    const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const hasTouchInput = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
     const touchControls = document.getElementById('touch-controls');
     const joystickContainer = document.getElementById('joystick-container');
     const joystickHandle = document.getElementById('joystick-handle');
@@ -476,7 +478,7 @@
     const downBtn = document.getElementById('down-btn');
 
     // Mostrar controles táctiles solo en móviles
-    if (isMobileDevice) {
+    if (hasTouchInput) {
       touchControls.classList.add('active');
     }
 
@@ -1964,46 +1966,44 @@
     //  CONTROLES TÁCTILES (Joystick + Botones)
     // ================================================================
     let touchActive = false;
-    let joystickTouchId = null;
+    let joystickPointerId = null;
     const joystickRadius = 50; // radio del joystick
     const joystickDeadzone = 15;
 
     // Joystick táctil
-    joystickContainer.addEventListener('touchstart', (e) => {
+    joystickContainer.addEventListener('pointerdown', (e) => {
+      if (!hasTouchInput && e.pointerType !== 'mouse') return;
       touchActive = true;
-      joystickTouchId = e.touches[0].identifier;
-      handleJoystickMove(e.touches[0]);
-    }, false);
+      joystickPointerId = e.pointerId;
+      joystickContainer.setPointerCapture?.(e.pointerId);
+      handleJoystickMove(e);
+      e.preventDefault();
+    });
 
-    document.addEventListener('touchmove', (e) => {
-      if (!touchActive || joystickTouchId === null) return;
-      for (let touch of e.touches) {
-        if (touch.identifier === joystickTouchId) {
-          handleJoystickMove(touch);
-          break;
-        }
-      }
-    }, false);
+    document.addEventListener('pointermove', (e) => {
+      if (!touchActive || joystickPointerId === null || e.pointerId !== joystickPointerId) return;
+      handleJoystickMove(e);
+      e.preventDefault();
+    });
 
-    document.addEventListener('touchend', (e) => {
-      for (let touch of e.changedTouches) {
-        if (touch.identifier === joystickTouchId) {
-          touchActive = false;
-          joystickTouchId = null;
-          resetJoystick();
-          keys.w = false; keys.a = false; keys.s = false; keys.d = false;
-          break;
-        }
-      }
-    }, false);
+    function endJoystickPointer(e) {
+      if (joystickPointerId !== null && e.pointerId !== joystickPointerId) return;
+      touchActive = false;
+      joystickPointerId = null;
+      resetJoystick();
+      keys.w = false; keys.a = false; keys.s = false; keys.d = false;
+    }
 
-    function handleJoystickMove(touch) {
+    document.addEventListener('pointerup', endJoystickPointer);
+    document.addEventListener('pointercancel', endJoystickPointer);
+
+    function handleJoystickMove(point) {
       const rect = joystickContainer.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
       
-      const dx = touch.clientX - centerX;
-      const dy = touch.clientY - centerY;
+      const dx = point.clientX - centerX;
+      const dy = point.clientY - centerY;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
       let limitX = dx;
@@ -2046,46 +2046,47 @@
     // Botones de acción
     let upPressed = false, downPressed = false;
 
-    upBtn.addEventListener('touchstart', (e) => {
-      e.preventDefault();
+    function pressForward() {
       upPressed = true;
       keys.w = true;
-    });
-    upBtn.addEventListener('touchend', (e) => {
-      e.preventDefault();
+    }
+
+    function releaseForward() {
       upPressed = false;
       if (!downPressed) keys.w = false;
-    });
-    upBtn.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      upPressed = true;
-      keys.w = true;
-    });
-    upBtn.addEventListener('mouseup', (e) => {
-      e.preventDefault();
-      upPressed = false;
-      if (!downPressed) keys.w = false;
-    });
-    downBtn.addEventListener('touchstart', (e) => {
-      e.preventDefault();
+    }
+
+    function pressBackward() {
       downPressed = true;
       keys.s = true;
-    });
-    downBtn.addEventListener('touchend', (e) => {
-      e.preventDefault();
+    }
+
+    function releaseBackward() {
       downPressed = false;
       if (!upPressed) keys.s = false;
-        downBtn.addEventListener('mousedown', (e) => {
-          e.preventDefault();
-          downPressed = true;
-          keys.s = true;
-        });
-        downBtn.addEventListener('mouseup', (e) => {
-          e.preventDefault();
-          downPressed = false;
-          if (!upPressed) keys.s = false;
-        });
+    }
+
+    upBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      pressForward();
     });
+    upBtn.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      releaseForward();
+    });
+    upBtn.addEventListener('pointercancel', releaseForward);
+    upBtn.addEventListener('pointerleave', releaseForward);
+
+    downBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      pressBackward();
+    });
+    downBtn.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      releaseBackward();
+    });
+    downBtn.addEventListener('pointercancel', releaseBackward);
+    downBtn.addEventListener('pointerleave', releaseBackward);
 
     // Botón de bloqueo (lock/unlock)
     let controlsLocked = false;
@@ -2102,13 +2103,7 @@
       }
     }
     
-    lockBtn.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleLock();
-    });
-    
-    lockBtn.addEventListener('mousedown', (e) => {
+    lockBtn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       e.stopPropagation();
       toggleLock();
