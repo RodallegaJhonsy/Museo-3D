@@ -1,8 +1,6 @@
 {
   "buildCommand": "echo 'Static files ready for deployment'",
   "outputDirectory": ".",
-  "public": true,
-  "functions": {},
   "routes": [
     {
       "src": "^/(?!.*\\.).*$",
