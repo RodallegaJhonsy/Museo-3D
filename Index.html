@@ -1942,8 +1942,11 @@
     const touchLookSensitivity = 0.0035;
     // Yaw/pitch acumulados manualmente porque PointerLockControls no se usa
     // en táctil (no hay lock real); rotamos la cámara directamente.
+    // Mantener también una quaternion para aplicar rotaciones relativas
+    // y evitar inversiones cuando yaw está cerca de π.
     let touchYaw = 0;
     let touchPitch = 0;
+    let touchQuat = new THREE.Quaternion();
 
     function clampPitch(p) {
       const limit = Math.PI / 2 - 0.05;
@@ -2013,10 +2016,26 @@
           const dy = t.clientY - lastLookY;
           lastLookX = t.clientX;
           lastLookY = t.clientY;
-          // Aplicar multiplicador si la pantalla está rotada 180° (corrige
-          // la inversión horizontal en dispositivos volteados).
-          touchYaw -= dx * touchLookSensitivity * (typeof orientationMultiplier !== 'undefined' ? orientationMultiplier : 1);
-          touchPitch = clampPitch(touchPitch - dy * touchLookSensitivity);
+          // Deltas de rotación: yaw alrededor de Y (world), pitch alrededor del eje right local.
+          const yawDelta = -dx * touchLookSensitivity * (typeof orientationMultiplier !== 'undefined' ? orientationMultiplier : 1);
+          const pitchDelta = -dy * touchLookSensitivity;
+
+          // Aplicar yaw en el espacio world: premultiplicar
+          const qYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), yawDelta);
+          touchQuat.premultiply(qYaw);
+
+          // Calcular el eje 'right' en world tras el yaw aplicado y aplicar pitch relativo
+          const right = new THREE.Vector3(1,0,0).applyQuaternion(touchQuat).normalize();
+          const qPitch = new THREE.Quaternion().setFromAxisAngle(right, pitchDelta);
+          touchQuat.multiply(qPitch);
+
+          // Clamp consistente: convertir a Euler 'YXZ', recortar el pitch y reconstruir quaternion
+          const eul = new THREE.Euler().setFromQuaternion(touchQuat, 'YXZ');
+          eul.x = clampPitch(eul.x);
+          touchQuat.setFromEuler(eul);
+          // Actualizar auxiliares
+          touchYaw = eul.y;
+          touchPitch = eul.x;
         }
         e.preventDefault();
       }, { passive: false });
@@ -2045,19 +2064,30 @@
       let orientationCompensation = (_orientationAngle === 180) ? Math.PI : 0;
       let orientationMultiplier = (_orientationAngle === 180) ? -1 : 1;
 
-      // Inicializar valores de yaw/pitch aplicando la compensación inicial.
-      touchYaw = camera.rotation.y + orientationCompensation;
-      touchPitch = camera.rotation.x;
+      // Inicializar quaternion de control aplicando la compensación inicial.
+      touchQuat.copy(camera.quaternion);
+      if (orientationCompensation !== 0) {
+        const qc = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), orientationCompensation);
+        touchQuat.premultiply(qc);
+      }
+      // Inicializar yaw/pitch auxiliares (para logs/debug si hace falta).
+      const e0 = new THREE.Euler().setFromQuaternion(touchQuat, 'YXZ');
+      touchYaw = e0.y;
+      touchPitch = e0.x;
 
       // Actualizar la compensación si cambia la orientación del dispositivo.
       function handleOrientationChange() {
         const newAngle = getScreenAngle();
         const newComp = (newAngle === 180) ? Math.PI : 0;
         const newMult = (newAngle === 180) ? -1 : 1;
-        // Ajustar touchYaw para mantener la misma vista relativa tras el cambio.
-        // Restamos el delta para evitar una rotación brusca de 180° al cambiar
-        // la orientación (evita que la vista "se dé vuelta" automáticamente).
-        touchYaw -= (newComp - orientationCompensation);
+        // Ajustar touchQuat para mantener la misma vista relativa tras el cambio
+        // sin producir rotación brusca: aplicamos la diferencia como rotación
+        // alrededor de Y en sentido contrario.
+        const deltaComp = newComp - orientationCompensation;
+        if (Math.abs(deltaComp) > 1e-6) {
+          const qd = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), -deltaComp);
+          touchQuat.premultiply(qd);
+        }
         orientationCompensation = newComp;
         orientationMultiplier = newMult;
         _orientationAngle = newAngle;
@@ -2126,9 +2156,9 @@
         if (isTouchDevice) {
           // Aplicar rotación acumulada por arrastre (yaw alrededor de Y, pitch en X,
           // en ese orden para evitar el "roll" típico de aplicar Euler XYZ directo).
-          camera.rotation.order = 'YXZ';
-          camera.rotation.y = touchYaw;
-          camera.rotation.x = touchPitch;
+          // Aplicar la quaternion acumulada por el control táctil para evitar
+          // problemas de signo/gimbal cuando yaw≈π.
+          camera.quaternion.copy(touchQuat);
 
           if (moveVector.x !== 0 || moveVector.y !== 0) {
             const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
