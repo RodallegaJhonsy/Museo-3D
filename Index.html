@@ -2013,7 +2013,9 @@
           const dy = t.clientY - lastLookY;
           lastLookX = t.clientX;
           lastLookY = t.clientY;
-          touchYaw -= dx * touchLookSensitivity;
+          // Aplicar multiplicador si la pantalla está rotada 180° (corrige
+          // la inversión horizontal en dispositivos volteados).
+          touchYaw -= dx * touchLookSensitivity * (typeof orientationMultiplier !== 'undefined' ? orientationMultiplier : 1);
           touchPitch = clampPitch(touchPitch - dy * touchLookSensitivity);
         }
         e.preventDefault();
@@ -2028,9 +2030,41 @@
       touchLookZone.addEventListener('touchcancel', releaseLook);
 
       // Inicializar yaw/pitch a partir de la orientación inicial de la cámara
-      // para que el primer arrastre no provoque un salto brusco de vista.
-      touchYaw = camera.rotation.y;
+      // y compensar la rotación física de la pantalla (ej. 180°) para que
+      // la vista no aparezca al revés en móviles con orientación invertida.
+      function getScreenAngle() {
+        const s = (screen && screen.orientation && screen.orientation.angle) || window.screenOrientation || window.orientation;
+        const a = (typeof s === 'number') ? s : 0;
+        return ((a % 360) + 360) % 360;
+      }
+
+      let _orientationAngle = getScreenAngle();
+      // Si la pantalla está rotada 180°, compensamos con PI y cambiamos el
+      // signo de la entrada táctil horizontal para que el arrastre siga siendo
+      // natural para el usuario.
+      let orientationCompensation = (_orientationAngle === 180) ? Math.PI : 0;
+      let orientationMultiplier = (_orientationAngle === 180) ? -1 : 1;
+
+      // Inicializar valores de yaw/pitch aplicando la compensación inicial.
+      touchYaw = camera.rotation.y + orientationCompensation;
       touchPitch = camera.rotation.x;
+
+      // Actualizar la compensación si cambia la orientación del dispositivo.
+      function handleOrientationChange() {
+        const newAngle = getScreenAngle();
+        const newComp = (newAngle === 180) ? Math.PI : 0;
+        const newMult = (newAngle === 180) ? -1 : 1;
+        // Ajustar touchYaw para mantener la misma vista relativa tras el cambio.
+        touchYaw += (newComp - orientationCompensation);
+        orientationCompensation = newComp;
+        orientationMultiplier = newMult;
+        _orientationAngle = newAngle;
+      }
+      if (screen && screen.orientation && typeof screen.orientation.addEventListener === 'function') {
+        screen.orientation.addEventListener('change', handleOrientationChange);
+      } else {
+        window.addEventListener('orientationchange', handleOrientationChange);
+      }
 
       // Mostrar el aviso de controles una vez termina la intro
       setTimeout(() => mobileHint.classList.add('show'), 600);
