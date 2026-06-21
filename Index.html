@@ -2056,7 +2056,16 @@
       upPressed = false;
       if (!downPressed) keys.w = false;
     });
-
+    upBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      upPressed = true;
+      keys.w = true;
+    });
+    upBtn.addEventListener('mouseup', (e) => {
+      e.preventDefault();
+      upPressed = false;
+      if (!downPressed) keys.w = false;
+    });
     downBtn.addEventListener('touchstart', (e) => {
       e.preventDefault();
       downPressed = true;
@@ -2066,12 +2075,22 @@
       e.preventDefault();
       downPressed = false;
       if (!upPressed) keys.s = false;
+        downBtn.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          downPressed = true;
+          keys.s = true;
+        });
+        downBtn.addEventListener('mouseup', (e) => {
+          e.preventDefault();
+          downPressed = false;
+          if (!upPressed) keys.s = false;
+        });
     });
 
     // Botón de bloqueo (lock/unlock)
     let controlsLocked = false;
-    lockBtn.addEventListener('touchstart', (e) => {
-      e.preventDefault();
+    
+    function toggleLock() {
       if (!controlsLocked) {
         if (!controls.isLocked) controls.lock();
         controlsLocked = true;
@@ -2081,6 +2100,18 @@
         controlsLocked = false;
         lockBtn.textContent = '🔓';
       }
+    }
+    
+    lockBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleLock();
+    });
+    
+    lockBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleLock();
     });
 
     // Actualizar estado del lock button cuando se bloqueen/desbloqueen los controles
