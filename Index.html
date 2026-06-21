@@ -1890,6 +1890,14 @@
       if (introProgress >= 1) {
         introProgress = 1;
         introActive = false;
+        if (isTouchDevice) {
+          // Sincronizar la quaternion táctil con la orientación final de la intro
+          // para no sobrescribir la vista correcta al empezar a controlar.
+          touchQuat.copy(camera.quaternion);
+          const eIntro = new THREE.Euler().setFromQuaternion(touchQuat, 'YXZ');
+          touchYaw = eIntro.y;
+          touchPitch = eIntro.x;
+        }
         clickMsg.classList.add('show');
         return;
       }
