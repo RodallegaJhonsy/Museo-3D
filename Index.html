@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Museo 3D - Mitos y Leyendas del Pacífico</title>
+  <style>
+    /* ===== ESTILOS GLOBALES ===== */
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Georgia', serif;
+      background: #0c0a08;
+    }
+
+    /* ===== PANTALLA DE CARGA ===== */
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 50% 40%, #241c14 0%, #140f0a 70%, #0c0a08 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #e8dcc8;
+      z-index: 1000;
+      transition: opacity 1.2s ease;
+      pointer-events: auto;
+    }
+    #loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #loading .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid #b8915c;
+      border-top: 4px solid #f0dfc0;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 30px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading .progress-bar {
+      width: 300px;
+      height: 6px;
+      background: #2a2218;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    #loading .progress-bar .fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #b8915c, #e8c089);
+      transition: width 0.3s;
+      border-radius: 4px;
+    }
+    #loading span {
+      font-size: 1.1rem;
+      background: rgba(0,0,0,0.5);
+      padding: 10px 28px;
+      border-radius: 40px;
+      letter-spacing: 1px;
+      margin-top: 8px;
+    }
+    #loading .error-msg {
+      color: #ff9966;
+      font-size: 0.9rem;
+      margin-top: 15px;
+      display: none;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 20px;
+      border-radius: 20px;
+    }
+    #loading .retry-btn {
+      margin-top: 15px;
+      padding: 8px 24px;
+      background: #b8915c;
+      border: none;
+      border-radius: 30px;
+      color: #1a1a1a;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1rem;
+      display: none;
+    }
+    #loading .retry-btn:hover {
+      background: #dbb88c;
+    }
+
+    /* ===== PANEL DE INFORMACIÓN ===== */
+    #info-panel {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      max-width: 700px;
+      background: rgba(24, 18, 12, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid #b8915c;
+      border-radius: 20px;
+      padding: 20px 30px;
+      color: #f5efe6;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+      opacity: 0;
+      transform: translateX(-50%) translateY(20px);
+      pointer-events: none;
+      z-index: 500;
+      text-align: center;
+    }
+    #info-panel.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+    #info-panel h2 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+      color: #dbb88c;
+      border-bottom: 1px solid #b8915c;
+      padding-bottom: 6px;
+    }
+    #info-panel p {
+      margin: 10px 0 0;
+      font-size: 1.1rem;
+      line-height: 1.5;
+      color: #d4c8b8;
+    }
+
+    /* ===== INSTRUCCIONES ===== */
+    #instructions {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      color: #e8dcc8;
+      padding: 12px 24px;
+      border-radius: 40px;
+      font-size: 0.95rem;
+      border: 1px solid #b8915c;
+      z-index: 100;
+      transition: opacity 1s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #instructions.hidden { opacity: 0; }
+    #instructions strong { color: #dbb88c; }
+
+    /* ===== MENSAJE DE CLIC ===== */
+    #click-msg {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px);
+      color: white;
+      padding: 30px 50px;
+      border-radius: 30px;
+      border: 2px solid #b8915c;
+      font-size: 1.8rem;
+      text-align: center;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.5s;
+      pointer-events: none;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+    }
+    #click-msg.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #click-msg small {
+      display: block;
+      font-size: 1rem;
+      margin-top: 12px;
+      color: #ccc;
+    }
+
+    /* ===== CONTROLES DE AUDIO ===== */
+    #audio-controls {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 300;
+      background: rgba(10, 8, 6, 0.55);
+      backdrop-filter: blur(6px);
+      border: 1px solid #b8915c;
+      border-radius: 16px;
+      padding: 12px;
+      color: #f5efe6;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    }
+    #audio-controls .audio-title {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #dbb88c;
+      margin-bottom: 2px;
+    }
+    #audio-controls button {
+      min-width: 132px;
+      padding: 8px 12px;
+      border: 1px solid #b8915c;
+      border-radius: 12px;
+      background: rgba(24, 18, 12, 0.92);
+      color: #f5efe6;
+      cursor: pointer;
+      font-size: 0.88rem;
+      text-align: left;
+      transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+    #audio-controls button:hover {
+      transform: translateY(-1px);
+      background: rgba(184, 145, 92, 0.15);
+    }
+    #audio-controls button.active {
+      background: #b8915c;
+      color: #1a1a1a;
+      font-weight: bold;
+    }
+    #audio-controls button small {
+      display: block;
+      opacity: 0.8;
+      font-size: 0.72rem;
+      margin-top: 2px;
+    }
+
+    /* ===== INDICADOR DE FPS (discreto, esquina inferior izquierda) ===== */
+    #perf-badge {
+      position: fixed;
+      bottom: 18px;
+      left: 18px;
+      z-index: 300;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      color: #c9b896;
+      background: rgba(10, 8, 6, 0.45);
+      border: 1px solid rgba(184, 145, 92, 0.4);
+      border-radius: 10px;
+      padding: 5px 10px;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 700px) {
+      #info-panel { width: 90%; padding: 15px 20px; bottom: 20px; }
+      #info-panel h2 { font-size: 1.5rem; }
+      #info-panel p { font-size: 0.95rem; }
+      #click-msg { font-size: 1.2rem; padding: 20px 25px; }
+      #instructions { font-size: 0.75rem; padding: 8px 16px; white-space: normal; }
+      #loading .progress-bar { width: 200px; }
+      #audio-controls { top: 10px; right: 10px; padding: 10px; }
+      #audio-controls button { min-width: 118px; }
+      #perf-badge { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA DE CARGA -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <span id="load-text">Cargando museo...</span>
+    <div class="progress-bar"><div class="fill" id="progress-fill"></div></div>
+    <div class="error-msg" id="error-msg">⏳ La carga está tomando más de lo esperado. Puedes continuar.</div>
+    <button class="retry-btn" id="retry-btn">Continuar de todas formas</button>
+  </div>
+
+  <!-- PANEL DE INFORMACIÓN -->
+  <div id="info-panel">
+    <h2 id="panel-title">Título</h2>
+    <p id="panel-desc">Descripción</p>
+  </div>
+
+  <!-- INSTRUCCIONES -->
+  <div id="instructions"><strong>WASD</strong> mover · <strong>Ratón</strong> mirar · <strong>ESC</strong> liberar</div>
+
+  <!-- MENSAJE DE CLIC -->
+  <div id="click-msg">
+    🖱️ Haz clic para explorar
+    <small>Pulsa ESC para soltar el ratón</small>
+  </div>
+
+  <div id="audio-controls">
+    <div class="audio-title">Audio</div>
+    <button id="music-btn" class="active">Música ambiente<br><small>Activada</small></button>
+    <button id="voice-btn" class="active">Narración<br><small>Activada</small></button>
+  </div>
+
+  <div id="perf-badge">FPS: --</div>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    // ================================================================
+    //  IMPORTACIONES
+    // ================================================================
+    import * as THREE from 'three';
+    import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    // ================================================================
+    //  DOM REFS
+    // ================================================================
+    const loadingEl = document.getElementById('loading');
+    const loadText = document.getElementById('load-text');
+    const progressFill = document.getElementById('progress-fill');
+    const errorMsg = document.getElementById('error-msg');
+    const retryBtn = document.getElementById('retry-btn');
+    const infoPanel = document.getElementById('info-panel');
+    const panelTitle = document.getElementById('panel-title');
+    const panelDesc = document.getElementById('panel-desc');
+    const instructions = document.getElementById('instructions');
+    const clickMsg = document.getElementById('click-msg');
+    const musicBtn = document.getElementById('music-btn');
+    const voiceBtn = document.getElementById('voice-btn');
+    const perfBadge = document.getElementById('perf-badge');
+
+    // ================================================================
+    //  AUDIO
+    // ================================================================
+    let audioCtx = null;
+    let musicNodes = [];
+    let musicAudio = null;
+    const musicTrackSrc = 'Sound/Sonido.mp3';
+    let musicEnabled = true;
+    let narrationEnabled = true;
+    let currentNarratedIndex = -1;
+    let ambientStarted = false;
+
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function startAmbientSound() {
+      if (!musicEnabled || ambientStarted) return;
+      if (musicTrackSrc) {
+        if (!musicAudio) {
+          musicAudio = new Audio(musicTrackSrc);
+          musicAudio.loop = true;
+          musicAudio.preload = 'auto';
+          musicAudio.volume = 1;
+        }
+        const playPromise = musicAudio.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => {});
+        }
+        ambientStarted = true;
+        return;
+      }
+
+      const ctx = ensureAudioContext();
+      const now = ctx.currentTime;
+
+      const bufferSize = ctx.sampleRate * 2;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * 0.5;
+      }
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      noise.loop = true;
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.setValueAtTime(160, now);
+      noiseFilter.Q.setValueAtTime(0.7, now);
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.24, now);
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noise.start(now);
+
+      const hum = ctx.createOscillator();
+      hum.type = 'sawtooth';
+      hum.frequency.setValueAtTime(52, now);
+      const humFilter = ctx.createBiquadFilter();
+      humFilter.type = 'lowpass';
+      humFilter.frequency.setValueAtTime(140, now);
+      const humGain = ctx.createGain();
+      humGain.gain.setValueAtTime(0.09, now);
+      hum.connect(humFilter);
+      humFilter.connect(humGain);
+      humGain.connect(ctx.destination);
+      hum.start(now);
+
+      const sub = ctx.createOscillator();
+      sub.type = 'sine';
+      sub.frequency.setValueAtTime(27, now);
+      const subGain = ctx.createGain();
+      subGain.gain.setValueAtTime(0.10, now);
+      sub.connect(subGain);
+      subGain.connect(ctx.destination);
+      sub.start(now);
+
+      musicNodes = [noise, noiseFilter, noiseGain, hum, humFilter, humGain, sub, subGain];
+      ambientStarted = true;
+    }
+
+    function stopAmbientSound() {
+      if (musicAudio) {
+        musicAudio.pause();
+        musicAudio.currentTime = 0;
+      }
+      musicNodes.forEach((node) => {
+        try {
+          if (typeof node.stop === 'function') node.stop();
+          if (typeof node.disconnect === 'function') node.disconnect();
+        } catch (error) {}
+      });
+      musicNodes = [];
+      ambientStarted = false;
+    }
+
+    function updateAudioButtons() {
+      const musicLabel = musicTrackSrc ? 'Canción externa' : 'Música ambiente';
+      musicBtn.classList.toggle('active', musicEnabled);
+      musicBtn.innerHTML = musicEnabled ? `${musicLabel}<br><small>Activada</small>` : `${musicLabel}<br><small>Desactivada</small>`;
+      voiceBtn.classList.toggle('active', narrationEnabled);
+      voiceBtn.innerHTML = narrationEnabled ? 'Narración<br><small>Activada</small>' : 'Narración<br><small>Desactivada</small>';
+    }
+
+    function speakDescription(text, index) {
+      if (!narrationEnabled || !('speechSynthesis' in window)) return;
+      if (currentNarratedIndex === index) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'es-ES';
+      utterance.rate = 0.92;
+      utterance.pitch = 0.95;
+      utterance.volume = 0.95;
+      currentNarratedIndex = index;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    musicBtn.addEventListener('click', () => {
+      musicEnabled = !musicEnabled;
+      if (musicEnabled) {
+        startAmbientSound();
+      } else {
+        stopAmbientSound();
+      }
+      updateAudioButtons();
+    });
+
+    voiceBtn.addEventListener('click', () => {
+      narrationEnabled = !narrationEnabled;
+      if (!narrationEnabled && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        currentNarratedIndex = -1;
+      }
+      updateAudioButtons();
+    });
+
+    updateAudioButtons();
+
+    // ================================================================
+    //  DATOS: LEYENDAS (12 leyendas)
+    // ================================================================
+    const leyendas = [
+      {
+        titulo: 'LA TUNDA',
+        desc: 'La Tunda es una figura aterradora que habita en las selvas del Pacífico colombiano. Se dice que es una mujer con un pie deforme, conocido como el "pata de molinillo", que utiliza para hipnotizar y capturar a sus víctimas, especialmente a los niños desobedientes.',
+        img: 'Images/La-Tunda.jpg'
+      },
+      {
+        titulo: 'LA PATASOLA',
+        desc: 'Es una de las leyendas más temidas del folclore colombiano, descrita como un espectro femenino de una sola pierna que habita en selvas y montañas. Aterroriza a hombres infieles, cazadores y destructores de la naturaleza, apareciendo a veces como una mujer hermosa para atraerlos y luego transformarse en un monstruo con colmillos.',
+        img: 'Images/La-Patasola.jpg'
+      },
+      {
+        titulo: 'EL DUENDE',
+        desc: 'La leyenda del duende en Ecuador es una de las más ricas y variadas del folklore nacional, con adaptaciones que cambian según la región, desde los Andes hasta la Costa. Generalmente se describe como un ser de baja estatura, que usa un sombrero enorme y tiene los pies hacia atrás para despistar a quienes intentan seguirlo.',
+        img: 'Images/El-Duende.jpg'
+      },
+      {
+        titulo: 'LA MADRE MONTE',
+        desc: 'La Madre monte es vista como una protectora de la naturaleza, castigando a aquellos que dañan el medio ambiente o desobedecen las reglas de la selva. Su presencia es un recordatorio del poder y la fuerza de la naturaleza, y de la necesidad de respetarla.',
+        img: 'Images/La-Madremonte.jpeg'
+      },
+      {
+        titulo: 'EL RIVIEL',
+        desc: 'El Riviel es una legendaria figura espectral del folclore afrodescendiente del Pacífico (Colombia y Ecuador), descrito como un espíritu maligno o ánima en pena que acecha a pescadores nocturnos y trasnochadores. Suele aparecer sobre una canoa o tabla, portando una luz, y se caracteriza por no tener rostro, intimidar con su voz y causar naufragios.',
+        img: 'Images/El-Riviel.jpg'
+      },
+      {
+        titulo: 'LA MADRE AGUA',
+        desc: 'La leyenda de la Madre Agua narra sobre una ninfa o fantasma de ríos y manantiales en Colombia, descrita como una mujer de belleza deslumbrante, cabellera rubia y ojos azules que atrae a niños y jóvenes a las profundidades con su canto. Según la tradición, se originó en la colonia cuando una española, tras la muerte de su hijo y su amante indígena, enloqueció y se arrojó al río, convirtiéndose en un espíritu que busca venganza y consuelo.',
+        img: 'Images/La-Madreagua.png'
+      },
+      {
+        titulo: 'EL MOHÁN',
+        desc: 'El Mohán es considerado tanto un mito como una leyenda del folclore colombiano, principalmente en la región del Tolima Grande y el río Magdalena. Actúa como una figura mítica (espíritu guardián de la naturaleza) y una leyenda popular (relatos orales sobre sus apariciones a pescadores y lavanderas).',
+        img: 'Images/El-Mohan.jpg'
+      },
+      {
+        titulo: 'EL BAMBERO',
+        desc: 'El Bambero es un personaje mítico de la tradición oral afroecuatoriana, específicamente de la provincia de Esmeraldas, descrito como un enano guardián del bosque que protege a los animales y cazadores de buen corazón. Vive entre las raíces tablares (bambas) de los árboles, cuida el ecosistema y castiga a quienes cazan o pescan en exceso, asustándolos con silbidos y piedras.',
+        img: 'Images/El-Bambero.png'
+      },
+      {
+        titulo: 'LA LLORONA',
+        desc: 'La Llorona es uno de los relatos más emblemáticos del folclore latinoamericano, especialmente en México. Narra la historia de un alma en pena que vaga por las noches buscando a sus hijos perdidos, asustando a quienes la escuchan con su desgarrador grito: "¡Ay, mis hijos!".',
+        img: 'Images/La-Llorona.jpeg'
+      },
+      {
+        titulo: 'LA MULA HERRADA',
+        desc: 'La leyenda de la Mula Herrada o Almamula es un mito folklórico latinoamericano (común en México, Colombia y Argentina) sobre una mujer condenada a transformarse en una mula espectral que arrastra cadenas y escupe fuego, castigada por tener relaciones amorosas prohibidas, a menudo con un cura o parientes. Vaga por las noches, asustando con el sonido de sus herraduras.',
+        img: 'Images/La-Mula-Herrada.jpg'
+      },
+      {
+        titulo: 'LA VIUDA',
+        desc: 'La leyenda de "La Viudita" es una famosa historia del folclore de Santa Cruz, Bolivia, sobre el espíritu de una mujer vestida de negro que aparece a medianoche para seducir y dar un susto mortal a hombres malvados, borrachos o infieles. Con su rostro oculto por un velo, guía a los hombres fuera del pueblo para mostrarles su verdadera forma de calavera, dejándolos aterrorizados.',
+        img: 'Images/La-Viuda.jpg'
+      },
+      {
+        titulo: 'EL DIABLO DEL MONTE',
+        desc: 'La leyenda del "Dueño del Monte" (o Viejo del Monte/Kiwíkgolo) describe a un ente folclórico de México, Centroamérica y Panamá que vigila bosques y montañas. Se le representa como un gigante peludo o sabanero monstruoso, a veces con un solo ojo brillante, que castiga a quienes destruyen la naturaleza o cazan injustificadamente.',
+        img: 'Images/El-Diablo-del-Monte.png'
+      }
+    ];
+
+    // ================================================================
+    //  DETECCIÓN DE CAPACIDAD DEL DISPOSITIVO (rendimiento adaptativo)
+    // ================================================================
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2);
+    const QUALITY = {
+      shadowMapSize: isMobile ? 512 : 1024,
+      particleCount: isMobile ? 90 : 220,
+      npcCount: isMobile ? 8 : 14,
+      sphereSegLow: 6,
+      sphereSegMid: 8,
+      cylinderSegLow: 6,
+      cylinderSegMid: 8
+    };
+
+    // ================================================================
+    //  ESCENA, CÁMARA, RENDERIZADORES
+    // ================================================================
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x14100b);
+    // Niebla cálida sutil: añade profundidad y disimula el límite de renderizado lejano,
+    // a la vez que refuerza la sensación de ambiente acogedor.
+    scene.fog = new THREE.Fog(0x1c150e, 12, 30);
+
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 50);
+    camera.position.set(0, 1.7, 15);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(dpr);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.autoUpdate = true;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.35;
+    document.body.appendChild(renderer.domElement);
+
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0';
+    labelRenderer.domElement.style.left = '0';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    document.body.appendChild(labelRenderer.domElement);
+
+    // ================================================================
+    //  CONTROLES
+    // ================================================================
+    const controls = new PointerLockControls(camera, renderer.domElement);
+    controls.addEventListener('lock', () => {
+      clickMsg.classList.remove('show');
+      instructions.classList.remove('hidden');
+    });
+    controls.addEventListener('unlock', () => {
+      clickMsg.classList.add('show');
+      instructions.classList.add('hidden');
+    });
+    renderer.domElement.addEventListener('click', () => {
+      if (!controls.isLocked) controls.lock();
+      if (musicEnabled) startAmbientSound();
+    });
+
+    // ================================================================
+    //  LUCES — paleta cálida, optimizadas (una sola fuente con sombra)
+    // ================================================================
+    // Solo la luz principal proyecta sombras dinámicas: con 1 sombra direccional bien
+    // configurada el ambiente se lee correctamente sin pagar el costo de múltiples
+    // shadow maps (la causa más cara del renderizado anterior).
+    const ambient = new THREE.AmbientLight(0x4a3a2a, 0.55);
+    scene.add(ambient);
+
+    // Luz hemisférica: barata (no proyecta sombra) y da una transición natural
+    // entre el tono cálido del techo y el suelo, sustituyendo a dos directional lights.
+    const hemi = new THREE.HemisphereLight(0xffd9a8, 0x3a2c1c, 0.5);
+    scene.add(hemi);
+
+    const mainLight = new THREE.DirectionalLight(0xffdcb0, 2.0);
+    mainLight.position.set(8, 14, 8);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.set(QUALITY.shadowMapSize, QUALITY.shadowMapSize);
+    const d = 16;
+    mainLight.shadow.camera.left = -d;
+    mainLight.shadow.camera.right = d;
+    mainLight.shadow.camera.top = d;
+    mainLight.shadow.camera.bottom = -d;
+    mainLight.shadow.camera.near = 1;
+    mainLight.shadow.camera.far = 25;
+    mainLight.shadow.bias = -0.0015;
+    scene.add(mainLight);
+
+    // Relleno cálido suave sin sombra (barato) para iluminar rostros desde el frente
+    const warmFill = new THREE.DirectionalLight(0xffb070, 0.55);
+    warmFill.position.set(-6, 5, 8);
+    scene.add(warmFill);
+
+    // Una sola luz de acento por esquina sin sombra, de bajo alcance, todas cálidas
+    // para reforzar la "iluminación cálida" pedida sin saturar el presupuesto de luces.
+    const accentColor = 0xffb066;
+    const accentPositions = [
+      [-7.5, 2.4, -7.5], [7.5, 2.4, 7.5], [-7.5, 2.4, 7.5], [7.5, 2.4, -7.5]
+    ];
+    const cornerLights = accentPositions.map(([x, y, z]) => {
+      const l = new THREE.PointLight(accentColor, 0.45, 9, 2);
+      l.position.set(x, y, z);
+      scene.add(l);
+      return l;
+    });
+
+    const signLight = new THREE.SpotLight(0xffdcb0, 1.0, 20, 0.3, 0.5, 1);
+    signLight.position.set(0, 5, 14);
+    signLight.target.position.set(0, 3.5, 9.2);
+    scene.add(signLight);
+    scene.add(signLight.target);
+
+    // ================================================================
+    //  MATERIALES Y GEOMETRÍAS COMPARTIDAS (cache global de assets)
+    // ================================================================
+    // Reutilizar instancias de THREE.Material y THREE.BufferGeometry entre
+    // todos los objetos repetidos (NPCs, columnas, marcos) reduce drásticamente
+    // las llamadas de draw / cambios de estado de WebGL y el uso de memoria.
+    const geoCache = {};
+    function sharedGeo(key, factory) {
+      if (!geoCache[key]) geoCache[key] = factory();
+      return geoCache[key];
+    }
+    const matCache = {};
+    function sharedMat(key, factory) {
+      if (!matCache[key]) matCache[key] = factory();
+      return matCache[key];
+    }
+
+    // ================================================================
+    //  CONSTRUCCIÓN DE LA SALA (con texturas de alta calidad)
+    // ================================================================
+    const roomSize = 18;
+    const wallHeight = 4.5;
+    const floorY = 0;
+    const half = roomSize / 2;
+
+    // Suelo con mayor resolución, tono más cálido
+    function createFloorTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#4a3a2c';
+      ctx.fillRect(0, 0, 1024, 1024);
+      ctx.strokeStyle = '#6e5a42';
+      ctx.lineWidth = 4;
+      const step = 128;
+      for (let i = 0; i <= 1024; i += step) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, 1024);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(1024, i);
+        ctx.stroke();
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(4, 4);
+      tex.anisotropy = 8;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      return tex;
+    }
+    const floorMat = new THREE.MeshStandardMaterial({ map: createFloorTexture(), roughness: 0.5, metalness: 0.1, side: THREE.DoubleSide });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(roomSize, roomSize), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = floorY;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Paredes con entrada frontal y cartel exterior, tono cálido
+    function createWallTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#dcc8a8';
+      ctx.fillRect(0, 0, 512, 512);
+      for (let i = 0; i < 2000; i++) {
+        ctx.fillStyle = `rgba(160,130,95,${Math.random()*0.15})`;
+        ctx.fillRect(Math.random()*512, Math.random()*512, 4, 4);
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(6, 3);
+      tex.anisotropy = 8;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      return tex;
+    }
+    const wallMat = new THREE.MeshStandardMaterial({ map: createWallTexture(), roughness: 0.7, metalness: 0.0, side: THREE.DoubleSide });
+
+    // Exterior: césped cálido en vez de repetir la textura del suelo interior,
+    // para dar sensación de ambientación distinta nada más salir por la puerta.
+    function createGroundOutsideTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#3c4a2a';
+      ctx.fillRect(0, 0, 512, 512);
+      for (let i = 0; i < 3000; i++) {
+        ctx.fillStyle = `rgba(90,110,60,${Math.random()*0.4})`;
+        ctx.fillRect(Math.random()*512, Math.random()*512, 3, 3);
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(6, 4);
+      tex.anisotropy = 4;
+      return tex;
+    }
+    const outsideGroundMat = new THREE.MeshStandardMaterial({ map: createGroundOutsideTexture(), roughness: 0.95, metalness: 0.0, side: THREE.DoubleSide });
+    const outsideGround = new THREE.Mesh(new THREE.PlaneGeometry(roomSize + 8, 10), outsideGroundMat);
+    outsideGround.rotation.x = -Math.PI / 2;
+    outsideGround.position.set(0, floorY, half + 4.8);
+    outsideGround.receiveShadow = true;
+    scene.add(outsideGround);
+
+    const wallBack = new THREE.Mesh(new THREE.BoxGeometry(roomSize, wallHeight, 0.12), wallMat);
+    wallBack.position.set(0, wallHeight / 2, -half);
+    wallBack.castShadow = true;
+    wallBack.receiveShadow = true;
+    scene.add(wallBack);
+
+    const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(roomSize, wallHeight, 0.12), wallMat);
+    wallLeft.position.set(-half, wallHeight / 2, 0);
+    wallLeft.rotation.y = Math.PI / 2;
+    wallLeft.castShadow = true;
+    wallLeft.receiveShadow = true;
+    scene.add(wallLeft);
+
+    const wallRight = new THREE.Mesh(new THREE.BoxGeometry(roomSize, wallHeight, 0.12), wallMat);
+    wallRight.position.set(half, wallHeight / 2, 0);
+    wallRight.rotation.y = -Math.PI / 2;
+    wallRight.castShadow = true;
+    wallRight.receiveShadow = true;
+    scene.add(wallRight);
+
+    const doorWidth = 2.7;
+    const doorHeight = 3.0;
+    const wallFrontLeft = new THREE.Mesh(new THREE.BoxGeometry((roomSize - doorWidth) / 2, wallHeight, 0.12), wallMat);
+    wallFrontLeft.position.set(-(roomSize / 4 + doorWidth / 4), wallHeight / 2, half);
+    wallFrontLeft.castShadow = true;
+    wallFrontLeft.receiveShadow = true;
+    scene.add(wallFrontLeft);
+
+    const wallFrontRight = new THREE.Mesh(new THREE.BoxGeometry((roomSize - doorWidth) / 2, wallHeight, 0.12), wallMat);
+    wallFrontRight.position.set((roomSize / 4 + doorWidth / 4), wallHeight / 2, half);
+    wallFrontRight.castShadow = true;
+    wallFrontRight.receiveShadow = true;
+    scene.add(wallFrontRight);
+
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, 0.2, 0.2), wallMat);
+    lintel.position.set(0, doorHeight, half);
+    lintel.castShadow = true;
+    lintel.receiveShadow = true;
+    scene.add(lintel);
+
+    const carpetMat = new THREE.MeshStandardMaterial({ color: 0x8a1a1a, roughness: 0.9, metalness: 0.0 });
+    const carpet = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.6), carpetMat);
+    carpet.rotation.x = -Math.PI / 2;
+    carpet.position.set(0, 0.02, half + 1.1);
+    carpet.receiveShadow = true;
+    scene.add(carpet);
+
+    // Alfombra central larga: ambientación adicional pedida, sin coste de iluminación
+    // (no recibe luces nuevas, comparte el mismo material económico).
+    const innerCarpetMat = new THREE.MeshStandardMaterial({ color: 0x6e1818, roughness: 0.95, metalness: 0.0 });
+    const innerCarpet = new THREE.Mesh(new THREE.PlaneGeometry(2.4, roomSize - 4), innerCarpetMat);
+    innerCarpet.rotation.x = -Math.PI / 2;
+    innerCarpet.position.set(0, 0.015, 0);
+    innerCarpet.receiveShadow = true;
+    scene.add(innerCarpet);
+
+    function createColumnDecor(x, z) {
+      const group = new THREE.Group();
+      const colMat = sharedMat('column', () => new THREE.MeshStandardMaterial({ color: 0x8a7a6a, roughness: 0.5, metalness: 0.1 }));
+      const capMat = sharedMat('columnCap', () => new THREE.MeshStandardMaterial({ color: 0xb8915c, roughness: 0.4, metalness: 0.3 }));
+      const shaftGeo = sharedGeo('columnShaft', () => new THREE.CylinderGeometry(0.2, 0.25, doorHeight, QUALITY.cylinderSegMid));
+      const shaft = new THREE.Mesh(shaftGeo, colMat);
+      shaft.position.y = doorHeight / 2;
+      shaft.castShadow = true;
+      shaft.receiveShadow = true;
+      group.add(shaft);
+      const capGeo = sharedGeo('columnCapGeo', () => new THREE.BoxGeometry(0.4, 0.15, 0.4));
+      const cap = new THREE.Mesh(capGeo, capMat);
+      cap.position.y = doorHeight;
+      cap.castShadow = true;
+      group.add(cap);
+      const baseGeo = sharedGeo('columnBaseGeo', () => new THREE.BoxGeometry(0.35, 0.1, 0.35));
+      const base = new THREE.Mesh(baseGeo, capMat);
+      base.position.y = 0.05;
+      base.castShadow = true;
+      group.add(base);
+      group.position.set(x, 0, z);
+      return group;
+    }
+    scene.add(createColumnDecor(-doorWidth / 2 - 0.3, half));
+    scene.add(createColumnDecor(doorWidth / 2 + 0.3, half));
+
+    function createDoor(xOffset, rotYOffset) {
+      const group = new THREE.Group();
+      const doorMat = sharedMat('doorPanel', () => new THREE.MeshStandardMaterial({ color: 0x6a4a2a, roughness: 0.8, metalness: 0.1 }));
+      const doorHandleMat = sharedMat('doorHandle', () => new THREE.MeshStandardMaterial({ color: 0xcfa86a, roughness: 0.3, metalness: 0.8 }));
+      const panelGeo = sharedGeo('doorPanelGeo', () => new THREE.BoxGeometry(doorWidth / 2 - 0.05, doorHeight - 0.1, 0.06));
+      const doorPanel = new THREE.Mesh(panelGeo, doorMat);
+      doorPanel.position.set(0, doorHeight / 2, 0);
+      doorPanel.castShadow = true;
+      doorPanel.receiveShadow = true;
+      group.add(doorPanel);
+      const stripMat = sharedMat('doorStrip', () => new THREE.MeshStandardMaterial({ color: 0x8a6a4a, roughness: 0.7 }));
+      const stripGeoH = sharedGeo('doorStripH', () => new THREE.BoxGeometry(doorWidth / 2 - 0.2, 0.04, 0.07));
+      const stripH = new THREE.Mesh(stripGeoH, stripMat);
+      stripH.position.set(0, doorHeight * 0.3, 0);
+      group.add(stripH);
+      const stripH2 = new THREE.Mesh(stripGeoH, stripMat);
+      stripH2.position.set(0, doorHeight * 0.7, 0);
+      group.add(stripH2);
+      const stripGeoV = sharedGeo('doorStripV', () => new THREE.BoxGeometry(0.04, doorHeight - 0.3, 0.07));
+      const stripV = new THREE.Mesh(stripGeoV, stripMat);
+      stripV.position.set(0.35, doorHeight / 2, 0);
+      group.add(stripV);
+      const handleGeo = sharedGeo('doorHandleGeo', () => new THREE.CylinderGeometry(0.03, 0.03, 0.12, QUALITY.cylinderSegLow));
+      const handle = new THREE.Mesh(handleGeo, doorHandleMat);
+      handle.rotation.x = Math.PI / 2;
+      handle.position.set(0.3, doorHeight / 2, 0.06);
+      group.add(handle);
+      const handleBaseGeo = sharedGeo('doorHandleBaseGeo', () => new THREE.CylinderGeometry(0.04, 0.04, 0.03, QUALITY.cylinderSegLow));
+      const handleBase = new THREE.Mesh(handleBaseGeo, doorHandleMat);
+      handleBase.rotation.x = Math.PI / 2;
+      handleBase.position.set(0.3, doorHeight / 2, 0.04);
+      group.add(handleBase);
+      group.position.set(xOffset, 0, half + 0.02);
+      group.rotation.y = rotYOffset;
+      return group;
+    }
+    scene.add(createDoor(-doorWidth / 4, 0.8));
+    scene.add(createDoor(doorWidth / 4, -0.8));
+
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        if (r > w / 2) r = w / 2;
+        if (r > h / 2) r = h / 2;
+        this.beginPath();
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        this.closePath();
+        return this;
+      };
+    }
+
+    function createWelcomeSign() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 0, 256);
+      grad.addColorStop(0, 'rgba(40, 26, 12, 0.9)');
+      grad.addColorStop(1, 'rgba(26, 18, 10, 0.95)');
+      ctx.fillStyle = grad;
+      ctx.roundRect(0, 0, 1024, 256, 20);
+      ctx.fill();
+      ctx.strokeStyle = '#b8915c';
+      ctx.lineWidth = 8;
+      ctx.roundRect(0, 0, 1024, 256, 20);
+      ctx.stroke();
+      ctx.fillStyle = '#f4e6cf';
+      ctx.font = 'bold 80px Georgia';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('BIENVENIDOS', 512, 110);
+      ctx.fillStyle = '#d8c8a8';
+      ctx.font = 'italic 34px Georgia';
+      ctx.fillText('Museo de Mitos y Leyendas del Pacífico', 512, 178);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      const mat = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, transparent: true });
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 1.3), mat);
+      sign.position.set(0, doorHeight + 0.5, half + 0.1);
+      scene.add(sign);
+      return sign;
+    }
+    createWelcomeSign();
+
+    // Techo con artesonado de alta calidad, tono cálido
+    function createCeilingTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#dcc8a0';
+      ctx.fillRect(0, 0, 1024, 1024);
+      const step = 128;
+      ctx.strokeStyle = '#b8a078';
+      ctx.lineWidth = 3;
+      for (let x = 0; x < 1024; x += step) {
+        for (let y = 0; y < 1024; y += step) {
+          ctx.strokeRect(x+4, y+4, step-8, step-8);
+          ctx.fillStyle = 'rgba(160,130,95,0.12)';
+          ctx.fillRect(x+8, y+8, step-16, step-16);
+        }
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(6, 4);
+      tex.anisotropy = 8;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      return tex;
+    }
+    const ceilingMat = new THREE.MeshStandardMaterial({ map: createCeilingTexture(), roughness: 0.7, metalness: 0.0, side: THREE.DoubleSide });
+    const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(roomSize, roomSize), ceilingMat);
+    ceiling.rotation.x = Math.PI / 2;
+    ceiling.position.y = wallHeight;
+    ceiling.receiveShadow = true;
+    scene.add(ceiling);
+
+    // Zócalo
+    const zocaloMat = new THREE.MeshStandardMaterial({ color: 0x6e5a42, roughness: 0.7 });
+    const zocaloGeoH = new THREE.BoxGeometry(roomSize, 0.25, 0.15);
+    const zocalos = [
+      { x: 0, z: -half, ry: 0 },
+      { x: 0, z: half, ry: 0 },
+      { x: -half, z: 0, ry: Math.PI/2 },
+      { x: half, z: 0, ry: Math.PI/2 }
+    ];
+    zocalos.forEach(z => {
+      const mesh = new THREE.Mesh(zocaloGeoH, zocaloMat);
+      mesh.position.set(z.x, 0.15, z.z);
+      mesh.rotation.y = z.ry;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+    });
+
+    // Lámpara (candelabro cálido) — geometría y material de bombilla reutilizados
+    function createChandelier() {
+      const group = new THREE.Group();
+      const matGold = sharedMat('chandelierGold', () => new THREE.MeshStandardMaterial({ color: 0xcfa86a, roughness: 0.3, metalness: 0.7 }));
+      const matGlass = sharedMat('chandelierGlass', () => new THREE.MeshStandardMaterial({ color: 0xffe2b0, roughness: 0.1, metalness: 0.0, emissive: 0xffaa55, emissiveIntensity: 0.45 }));
+      const poleGeo = sharedGeo('chandelierPole', () => new THREE.CylinderGeometry(0.08, 0.08, 0.8, QUALITY.cylinderSegMid));
+      const pole = new THREE.Mesh(poleGeo, matGold);
+      pole.position.y = 0.4;
+      group.add(pole);
+      const armGeo = sharedGeo('chandelierArm', () => new THREE.CylinderGeometry(0.04, 0.04, 0.8, QUALITY.cylinderSegLow));
+      const bulbGeo = sharedGeo('chandelierBulb', () => new THREE.SphereGeometry(0.12, QUALITY.sphereSegLow, QUALITY.sphereSegLow));
+      for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2;
+        const arm = new THREE.Mesh(armGeo, matGold);
+        arm.position.set(Math.sin(angle)*0.5, 0.7, Math.cos(angle)*0.5);
+        arm.rotation.z = Math.sin(angle) * 0.6;
+        arm.rotation.x = Math.cos(angle) * 0.6;
+        group.add(arm);
+        const lightSphere = new THREE.Mesh(bulbGeo, matGlass);
+        lightSphere.position.set(Math.sin(angle)*0.9, 0.2, Math.cos(angle)*0.9);
+        group.add(lightSphere);
+      }
+      const centerGeo = sharedGeo('chandelierCenter', () => new THREE.SphereGeometry(0.15, QUALITY.sphereSegLow, QUALITY.sphereSegLow));
+      const centerLight = new THREE.Mesh(centerGeo, matGlass);
+      centerLight.position.set(0, 0.2, 0);
+      group.add(centerLight);
+      group.position.set(0, wallHeight-0.2, 0);
+      return group;
+    }
+    scene.add(createChandelier());
+
+    const pointLight = new THREE.PointLight(0xffaa55, 1.1, 14, 2);
+    pointLight.position.set(0, wallHeight-0.5, 0);
+    pointLight.castShadow = false;
+    scene.add(pointLight);
+
+    // ================================================================
+    //  DECORACIÓN AMBIENTAL: bancos y macetas (sin coste de sombra extra)
+    // ================================================================
+    // Elementos puramente decorativos que dan vida a la sala. Reutilizan
+    // geometría/material entre instancias y no proyectan sombra (receiveShadow
+    // sí, para integrarse visualmente con el suelo) para mantener el coste bajo.
+    function createBench(x, z, rotY) {
+      const group = new THREE.Group();
+      const woodMat = sharedMat('benchWood', () => new THREE.MeshStandardMaterial({ color: 0x5a4128, roughness: 0.8 }));
+      const metalMat = sharedMat('benchMetal', () => new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.4, metalness: 0.6 }));
+      const seatGeo = sharedGeo('benchSeat', () => new THREE.BoxGeometry(1.4, 0.06, 0.4));
+      const seat = new THREE.Mesh(seatGeo, woodMat);
+      seat.position.y = 0.45;
+      seat.receiveShadow = true;
+      group.add(seat);
+      const legGeo = sharedGeo('benchLeg', () => new THREE.BoxGeometry(0.06, 0.45, 0.36));
+      [-0.6, 0.6].forEach(lx => {
+        const leg = new THREE.Mesh(legGeo, metalMat);
+        leg.position.set(lx, 0.225, 0);
+        leg.receiveShadow = true;
+        group.add(leg);
+      });
+      group.position.set(x, 0, z);
+      group.rotation.y = rotY;
+      return group;
+    }
+
+    function createPottedPlant(x, z) {
+      const group = new THREE.Group();
+      const potMat = sharedMat('plantPot', () => new THREE.MeshStandardMaterial({ color: 0x7a4a30, roughness: 0.8 }));
+      const leafMat = sharedMat('plantLeaf', () => new THREE.MeshStandardMaterial({ color: 0x3c5a2e, roughness: 0.7 }));
+      const potGeo = sharedGeo('plantPotGeo', () => new THREE.CylinderGeometry(0.22, 0.18, 0.32, QUALITY.cylinderSegMid));
+      const pot = new THREE.Mesh(potGeo, potMat);
+      pot.position.y = 0.16;
+      pot.castShadow = true;
+      pot.receiveShadow = true;
+      group.add(pot);
+      const leafGeo = sharedGeo('plantLeafGeo', () => new THREE.ConeGeometry(0.35, 0.9, QUALITY.cylinderSegLow));
+      for (let i = 0; i < 3; i++) {
+        const leaf = new THREE.Mesh(leafGeo, leafMat);
+        const a = (i / 3) * Math.PI * 2;
+        leaf.position.set(Math.sin(a) * 0.08, 0.62 + i * 0.12, Math.cos(a) * 0.08);
+        leaf.rotation.z = Math.sin(a) * 0.25;
+        leaf.rotation.x = Math.cos(a) * 0.25;
+        leaf.scale.setScalar(1 - i * 0.18);
+        leaf.castShadow = true;
+        group.add(leaf);
+      }
+      group.position.set(x, 0, z);
+      return group;
+    }
+
+    // Bancos centrales para descansar/contemplar, y macetas en las esquinas
+    // de la sala — ambientación pedida, coste mínimo.
+    scene.add(createBench(-2.6, 2.2, Math.PI / 2));
+    scene.add(createBench(2.6, -2.2, -Math.PI / 2));
+    [[-half + 0.9, -half + 0.9], [half - 0.9, -half + 0.9], [-half + 0.9, half - 0.9], [half - 0.9, half - 0.9]].forEach(([px, pz]) => {
+      scene.add(createPottedPlant(px, pz));
+    });
+
+    // ================================================================
+    //  PARTÍCULAS (luciérnagas) — cantidad adaptada al dispositivo
+    // ================================================================
+    const particleCount = QUALITY.particleCount;
+    const particleGeo = new THREE.BufferGeometry();
+    const posArr = new Float32Array(particleCount * 3);
+    const sizes = new Float32Array(particleCount);
+    const speeds = new Float32Array(particleCount);
+    const offsets = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 2 + Math.random() * 7;
+      posArr[i*3] = Math.cos(angle) * radius;
+      posArr[i*3+1] = 0.5 + Math.random() * 3.5;
+      posArr[i*3+2] = Math.sin(angle) * radius;
+      sizes[i] = 0.02 + Math.random() * 0.04;
+      speeds[i] = 0.2 + Math.random() * 0.5;
+      offsets[i*3] = Math.random() * 100;
+      offsets[i*3+1] = Math.random() * 100;
+      offsets[i*3+2] = Math.random() * 100;
+    }
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+    particleGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    const particleMat = new THREE.PointsMaterial({
+      color: 0xffdd88,
+      size: 0.08,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const particles = new THREE.Points(particleGeo, particleMat);
+    scene.add(particles);
+    const particleData = { positions: posArr, speeds, offsets };
+
+    // ================================================================
+    //  CREAR CUADROS CON ALTA RESOLUCIÓN Y NITIDEZ
+    // ================================================================
+    const cuadros = [];
+    const cuadroInfo = [];
+    const spotLights = [];
+
+    function loadImageWithFallback(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        let resolved = false;
+        const timeout = setTimeout(() => {
+          if (!resolved) { resolved = true; resolve(null); }
+        }, 4000);
+        img.onload = () => { if (!resolved) { resolved = true; clearTimeout(timeout); resolve(img); } };
+        img.onerror = () => { if (!resolved) { resolved = true; clearTimeout(timeout); resolve(null); } };
+        img.src = src;
+      });
+    }
+
+    function wrapText(ctx, text, maxWidth) {
+      const words = text.split(' ');
+      const lines = [];
+      let current = '';
+      for (let i = 0; i < words.length; i++) {
+        const test = current + words[i] + ' ';
+        if (ctx.measureText(test).width > maxWidth && i > 0) {
+          lines.push(current.trim());
+          current = words[i] + ' ';
+        } else {
+          current = test;
+        }
+      }
+      if (current.trim().length > 0) lines.push(current.trim());
+      return lines;
+    }
+
+    // Geometría y material del marco/lienzo compartidos entre los 12 cuadros
+    // (todos comparten el mismo tamaño w×h), solo cambia la textura del lienzo.
+    const PAINT_W = 1.8;
+    const PAINT_H = PAINT_W * (1280 / 1024);
+    const frameGeoShared = new THREE.BoxGeometry(PAINT_W + 0.12, PAINT_H + 0.12, 0.08);
+    const innerFrameGeoShared = new THREE.BoxGeometry(PAINT_W - 0.1, PAINT_H - 0.1, 0.02);
+    const canvasGeoShared = new THREE.PlaneGeometry(PAINT_W, PAINT_H);
+    const shadowGeoShared = new THREE.PlaneGeometry(PAINT_W + 0.2, PAINT_H + 0.2);
+    const frameMatShared = new THREE.MeshStandardMaterial({ color: 0xb8915c, roughness: 0.3, metalness: 0.4 });
+    const innerFrameMatShared = new THREE.MeshStandardMaterial({ color: 0x8a7a6a, roughness: 0.5 });
+    const shadowMatShared = new THREE.MeshStandardMaterial({ color: 0x000000, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
+
+    async function createPainting(leyenda, pos, rotY) {
+      // Canvas de alta resolución (1024x1280)
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1280;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Fondo con degradado cálido
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, '#312618');
+      grad.addColorStop(1, '#1c150e');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Marco interno dorado
+      ctx.strokeStyle = '#b8915c';
+      ctx.lineWidth = 24;
+      ctx.strokeRect(24, 24, canvas.width-48, canvas.height-48);
+
+      const margin = 48;
+      const imgX = margin;
+      const imgY = margin;
+      const imgW = canvas.width - margin*2;
+      const imgH = 720; // más altura para la imagen
+
+      // Cargar imagen y dibujar con alta calidad
+      const img = await loadImageWithFallback(leyenda.img);
+      if (img) {
+        ctx.drawImage(img, imgX, imgY, imgW, imgH);
+      } else {
+        ctx.fillStyle = '#4a3a2c';
+        ctx.fillRect(imgX, imgY, imgW, imgH);
+        ctx.fillStyle = '#b8915c';
+        ctx.font = 'bold 48px Georgia';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Imagen', canvas.width/2, imgY + imgH/2);
+      }
+
+      // Título (más grande y nítido)
+      ctx.fillStyle = '#f4e6cf';
+      ctx.font = 'bold 54px Georgia';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(leyenda.titulo, canvas.width/2, imgY + imgH + 24);
+
+      // Descripción con mejor legibilidad
+      ctx.font = '32px Georgia';
+      ctx.fillStyle = '#d8c8a8';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const lines = wrapText(ctx, leyenda.desc, canvas.width - 100);
+      let lineY = imgY + imgH + 100;
+      lines.forEach(line => {
+        ctx.fillText(line, canvas.width/2, lineY);
+        lineY += 44;
+      });
+
+      // Crear textura con filtros de alta calidad
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+
+      const group = new THREE.Group();
+
+      // Marco exterior (geometría/material compartidos)
+      const frame = new THREE.Mesh(frameGeoShared, frameMatShared);
+      frame.castShadow = true;
+      frame.receiveShadow = true;
+      group.add(frame);
+
+      // Lienzo con la textura propia de esta leyenda (único material por imagen)
+      const canvasMat = new THREE.MeshStandardMaterial({
+        map: texture,
+        roughness: 0.4,
+        metalness: 0.1,
+        side: THREE.DoubleSide,
+        emissive: 0x2a2218,
+        emissiveIntensity: 0.25
+      });
+      const canvasMesh = new THREE.Mesh(canvasGeoShared, canvasMat);
+      canvasMesh.position.z = 0.055;
+      group.add(canvasMesh);
+
+      // Marco interior (bisel, compartido)
+      const innerFrame = new THREE.Mesh(innerFrameGeoShared, innerFrameMatShared);
+      innerFrame.position.z = 0.04;
+      group.add(innerFrame);
+
+      // Sombra (compartida)
+      const shadow = new THREE.Mesh(shadowGeoShared, shadowMatShared);
+      shadow.position.z = -0.02;
+      group.add(shadow);
+
+      group.position.set(pos.x, pos.y, pos.z);
+      group.rotation.y = rotY;
+      cuadros.push(group);
+      cuadroInfo.push({ group, leyenda });
+      scene.add(group);
+
+      // Spotlight cálido (sin sombra: 12 sombras simultáneas sería muy costoso,
+      // la sombra principal de mainLight ya cubre el volumen general de la sala)
+      const spot = new THREE.SpotLight(0xffd9a0, 0.7, 10, 0.4, 0.5, 1);
+      spot.castShadow = false;
+      const dir = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0,1,0), rotY);
+      const spotPos = pos.clone().add(dir.multiplyScalar(1.8));
+      spot.position.copy(spotPos);
+      spot.target.position.copy(pos);
+      scene.add(spot);
+      scene.add(spot.target);
+      spotLights.push(spot);
+    }
+
+    // Colocar 12 cuadros (3 por pared)
+    const halfRoom = roomSize/2 - 0.7;
+    const yPos = 1.9;
+    const paintingPositions = [
+      { pos: { x: -4.0, y: yPos, z: -halfRoom }, rotY: 0 },
+      { pos: { x: 0, y: yPos, z: -halfRoom }, rotY: 0 },
+      { pos: { x: 4.0, y: yPos, z: -halfRoom }, rotY: 0 },
+      { pos: { x: -4.0, y: yPos, z: halfRoom }, rotY: Math.PI },
+      { pos: { x: 0, y: yPos, z: halfRoom }, rotY: Math.PI },
+      { pos: { x: 4.0, y: yPos, z: halfRoom }, rotY: Math.PI },
+      { pos: { x: -halfRoom, y: yPos, z: -3.5 }, rotY: Math.PI/2 },
+      { pos: { x: -halfRoom, y: yPos, z: 0 }, rotY: Math.PI/2 },
+      { pos: { x: -halfRoom, y: yPos, z: 3.5 }, rotY: Math.PI/2 },
+      { pos: { x: halfRoom, y: yPos, z: -3.5 }, rotY: -Math.PI/2 },
+      { pos: { x: halfRoom, y: yPos, z: 0 }, rotY: -Math.PI/2 },
+      { pos: { x: halfRoom, y: yPos, z: 3.5 }, rotY: -Math.PI/2 }
+    ];
+
+    // Carga con progreso
+    let loaded = 0;
+    const total = leyendas.length;
+    loadText.textContent = `Cargando imágenes... 0 / ${total}`;
+    progressFill.style.width = '0%';
+
+    const loadPromises = leyendas.map((leyenda, i) => {
+      return createPainting(leyenda, paintingPositions[i].pos, paintingPositions[i].rotY)
+        .then(() => {
+          loaded++;
+          const pct = (loaded / total) * 100;
+          loadText.textContent = `Cargando imágenes... ${loaded} / ${total}`;
+          progressFill.style.width = `${pct}%`;
+        })
+        .catch(() => {
+          loaded++;
+          const pct = (loaded / total) * 100;
+          loadText.textContent = `Cargando imágenes... ${loaded} / ${total}`;
+          progressFill.style.width = `${pct}%`;
+        });
+    });
+
+    await Promise.allSettled(loadPromises);
+
+    // ================================================================
+    //  GEOMETRÍAS Y MATERIALES COMPARTIDOS PARA PERSONAJES
+    // ================================================================
+    // Antes: cada uno de los 16 NPCs creaba ~20 geometrías y ~12 materiales
+    // propios (incluso para piezas idénticas como ojos, cejas o zapatos).
+    // Ahora todas las piezas no-coloreadas-por-NPC (ojos, dientes, manos, etc.)
+    // comparten una única geometría/material global, y los materiales que sí
+    // dependen del color de ropa de cada NPC se cachean por color para que
+    // los 14-16 personajes solo generen unos pocos materiales de ropa en total
+    // en lugar de cientos.
+    function personGeoSet(scale) {
+      const key = 'g_' + scale.toFixed(3);
+      if (geoCache[key]) return geoCache[key];
+      const set = {
+        torso: new THREE.CylinderGeometry(0.32 * scale, 0.28 * scale, 1, QUALITY.cylinderSegMid),
+        hip: new THREE.CylinderGeometry(0.28 * scale, 0.25 * scale, 1, QUALITY.cylinderSegMid),
+        neck: new THREE.CylinderGeometry(0.08 * scale, 0.1 * scale, 0.08 * scale, QUALITY.cylinderSegLow),
+        head: new THREE.SphereGeometry(0.16 * scale, 10, 10),
+        nose: new THREE.ConeGeometry(0.035 * scale, 0.05 * scale, 4),
+        eye: new THREE.SphereGeometry(0.035 * scale, QUALITY.sphereSegLow, QUALITY.sphereSegLow),
+        pupil: new THREE.SphereGeometry(0.018 * scale, QUALITY.sphereSegLow, QUALITY.sphereSegLow),
+        brow: new THREE.CylinderGeometry(0.003 * scale, 0.003 * scale, 0.07 * scale, 4),
+        mouth: new THREE.TorusGeometry(0.035 * scale, 0.008 * scale, 5, 8, Math.PI),
+        hair: new THREE.SphereGeometry(0.17 * scale, QUALITY.sphereSegLow, QUALITY.sphereSegLow),
+        shoulder: new THREE.SphereGeometry(0.09 * scale, QUALITY.sphereSegLow, QUALITY.sphereSegLow),
+        arm: new THREE.CylinderGeometry(0.045 * scale, 0.055 * scale, 1, QUALITY.cylinderSegLow),
+        forearm: new THREE.CylinderGeometry(0.035 * scale, 0.045 * scale, 1, QUALITY.cylinderSegLow),
+        hand: new THREE.SphereGeometry(0.04 * scale, QUALITY.sphereSegLow, QUALITY.sphereSegLow),
+        thigh: new THREE.CylinderGeometry(0.07 * scale, 0.09 * scale, 1, QUALITY.cylinderSegLow),
+        calf: new THREE.CylinderGeometry(0.06 * scale, 0.07 * scale, 1, QUALITY.cylinderSegLow),
+        shoe: new THREE.BoxGeometry(0.1 * scale, 0.05 * scale, 0.15 * scale)
+      };
+      geoCache[key] = set;
+      return set;
+    }
+
+    const skinColor = 0xf0d8b0;
+    const shoeColor = 0x2a2a2a;
+    const hairColors = [0x2a1a0a, 0x4a2a1a, 0x1a1a0a, 0x3a2a0a];
+
+    const skinMatShared = sharedMat('skin', () => new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.6 }));
+    const eyeMatShared = sharedMat('eye', () => new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 }));
+    const pupilMatShared = sharedMat('pupil', () => new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.1 }));
+    const browMatShared = sharedMat('brow', () => new THREE.MeshStandardMaterial({ color: 0x2a1a0a }));
+    const mouthMatShared = sharedMat('mouth', () => new THREE.MeshStandardMaterial({ color: 0x8a3a3a }));
+    const pantsMatShared = sharedMat('pants', () => new THREE.MeshStandardMaterial({ color: 0x3a3a4a, roughness: 0.8 }));
+    const shoeMatShared = sharedMat('shoe', () => new THREE.MeshStandardMaterial({ color: shoeColor, roughness: 0.9 }));
+    function hairMatForColor(c) {
+      return sharedMat('hair_' + c, () => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 }));
+    }
+    function shirtMatForColor(c) {
+      return sharedMat('shirt_' + c, () => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 }));
+    }
+
+    // ================================================================
+    //  CREAR PERSONAJES (geometría/material reutilizados al máximo)
+    // ================================================================
+    function createRealisticPerson(color, isChild = false) {
+      const group = new THREE.Group();
+      const height = isChild ? 1.2 : 1.75;
+      const scale = isChild ? 0.65 : 1.0;
+      const G = personGeoSet(scale);
+      const shirtMat = shirtMatForColor(color);
+      const hairMat = hairMatForColor(hairColors[Math.floor(Math.random() * hairColors.length)]);
+
+      const torso = new THREE.Mesh(G.torso, shirtMat);
+      torso.scale.y = height * 0.35;
+      torso.position.y = height * 0.55;
+      torso.castShadow = true;
+      group.add(torso);
+
+      const hip = new THREE.Mesh(G.hip, pantsMatShared);
+      hip.scale.y = height * 0.15;
+      hip.position.y = height * 0.35;
+      hip.castShadow = true;
+      group.add(hip);
+
+      const neck = new THREE.Mesh(G.neck, skinMatShared);
+      neck.position.y = height * 0.75;
+      group.add(neck);
+
+      const head = new THREE.Mesh(G.head, skinMatShared);
+      head.position.y = height * 0.82;
+      head.castShadow = true;
+      group.add(head);
+
+      const nose = new THREE.Mesh(G.nose, skinMatShared);
+      nose.position.set(0, height * 0.8, 0.16 * scale);
+      nose.rotation.x = 0.3;
+      group.add(nose);
+
+      const eyeY = height * 0.84;
+      const eyeZ = 0.155 * scale;
+      const eyeL = new THREE.Mesh(G.eye, eyeMatShared);
+      eyeL.position.set(-0.09 * scale, eyeY, eyeZ);
+      group.add(eyeL);
+      const pupilL = new THREE.Mesh(G.pupil, pupilMatShared);
+      pupilL.position.set(-0.09 * scale, eyeY - 0.005 * scale, eyeZ + 0.02 * scale);
+      group.add(pupilL);
+      const eyeR = new THREE.Mesh(G.eye, eyeMatShared);
+      eyeR.position.set(0.09 * scale, eyeY, eyeZ);
+      group.add(eyeR);
+      const pupilR = new THREE.Mesh(G.pupil, pupilMatShared);
+      pupilR.position.set(0.09 * scale, eyeY - 0.005 * scale, eyeZ + 0.02 * scale);
+      group.add(pupilR);
+
+      const browL = new THREE.Mesh(G.brow, browMatShared);
+      browL.position.set(-0.09 * scale, eyeY + 0.04 * scale, eyeZ + 0.01 * scale);
+      browL.rotation.x = 0.2;
+      browL.rotation.z = -0.1;
+      group.add(browL);
+      const browR = new THREE.Mesh(G.brow, browMatShared);
+      browR.position.set(0.09 * scale, eyeY + 0.04 * scale, eyeZ + 0.01 * scale);
+      browR.rotation.x = 0.2;
+      browR.rotation.z = 0.1;
+      group.add(browR);
+
+      const mouth = new THREE.Mesh(G.mouth, mouthMatShared);
+      mouth.position.set(0, height * 0.78, 0.16 * scale);
+      mouth.rotation.x = 0.1;
+      group.add(mouth);
+
+      const hair = new THREE.Mesh(G.hair, hairMat);
+      hair.position.y = height * 0.86;
+      hair.scale.set(1, 0.5, 1);
+      hair.castShadow = true;
+      group.add(hair);
+
+      const armGroupL = new THREE.Group();
+      armGroupL.position.set(-0.38 * scale, height * 0.55, 0);
+      group.add(armGroupL);
+
+      const armGroupR = new THREE.Group();
+      armGroupR.position.set(0.38 * scale, height * 0.55, 0);
+      group.add(armGroupR);
+
+      const shoulderL = new THREE.Mesh(G.shoulder, shirtMat);
+      armGroupL.add(shoulderL);
+      const shoulderR = new THREE.Mesh(G.shoulder, shirtMat);
+      armGroupR.add(shoulderR);
+
+      const upperArmL = new THREE.Mesh(G.arm, shirtMat);
+      upperArmL.scale.y = height * 0.22;
+      upperArmL.position.set(0, -height * 0.11, 0);
+      upperArmL.castShadow = true;
+      armGroupL.add(upperArmL);
+      const upperArmR = new THREE.Mesh(G.arm, shirtMat);
+      upperArmR.scale.y = height * 0.22;
+      upperArmR.position.set(0, -height * 0.11, 0);
+      armGroupR.add(upperArmR);
+
+      const forearmL = new THREE.Mesh(G.forearm, skinMatShared);
+      forearmL.scale.y = height * 0.2;
+      forearmL.position.set(0, -height * 0.25, 0);
+      armGroupL.add(forearmL);
+      const forearmR = new THREE.Mesh(G.forearm, skinMatShared);
+      forearmR.scale.y = height * 0.2;
+      forearmR.position.set(0, -height * 0.25, 0);
+      armGroupR.add(forearmR);
+
+      const handL = new THREE.Mesh(G.hand, skinMatShared);
+      handL.position.set(0, -height * 0.35, 0);
+      armGroupL.add(handL);
+      const handR = new THREE.Mesh(G.hand, skinMatShared);
+      handR.position.set(0, -height * 0.35, 0);
+      armGroupR.add(handR);
+
+      const legGroupL = new THREE.Group();
+      legGroupL.position.set(-0.12 * scale, height * 0.2, 0);
+      group.add(legGroupL);
+
+      const legGroupR = new THREE.Group();
+      legGroupR.position.set(0.12 * scale, height * 0.2, 0);
+      group.add(legGroupR);
+
+      const thighL = new THREE.Mesh(G.thigh, pantsMatShared);
+      thighL.scale.y = height * 0.22;
+      thighL.position.set(0, -height * 0.11, 0);
+      thighL.castShadow = true;
+      legGroupL.add(thighL);
+      const thighR = new THREE.Mesh(G.thigh, pantsMatShared);
+      thighR.scale.y = height * 0.22;
+      thighR.position.set(0, -height * 0.11, 0);
+      legGroupR.add(thighR);
+
+      const calfL = new THREE.Mesh(G.calf, pantsMatShared);
+      calfL.scale.y = height * 0.22;
+      calfL.position.set(0, -height * 0.27, 0);
+      legGroupL.add(calfL);
+      const calfR = new THREE.Mesh(G.calf, pantsMatShared);
+      calfR.scale.y = height * 0.22;
+      calfR.position.set(0, -height * 0.27, 0);
+      legGroupR.add(calfR);
+
+      const shoeL = new THREE.Mesh(G.shoe, shoeMatShared);
+      shoeL.position.set(0, -height * 0.38, 0.03 * scale);
+      legGroupL.add(shoeL);
+      const shoeR = new THREE.Mesh(G.shoe, shoeMatShared);
+      shoeR.position.set(0, -height * 0.38, 0.03 * scale);
+      legGroupR.add(shoeR);
+
+      group.userData = {
+        armGroupL,
+        armGroupR,
+        legGroupL,
+        legGroupR,
+        torso,
+        head,
+        hip,
+        height,
+        scale
+      };
+
+      return group;
+    }
+
+    // ================================================================
+    //  SISTEMA DE NPCs (cantidad adaptada al dispositivo)
+    // ================================================================
+    const npcs = [];
+    const npcColors = [0x2a6f8f, 0x8f2a4a, 0x4a8f2a, 0x8f6f2a, 0x6f2a8f, 0x2a8f6f];
+
+    function createNPCs() {
+      const numAdults = QUALITY.npcCount;
+      const allNPCs = [];
+
+      for (let i = 0; i < numAdults; i++) {
+        const color = npcColors[i % npcColors.length];
+        const person = createRealisticPerson(color, false);
+        const x = (Math.random() - 0.5) * (roomSize - 4);
+        const z = (Math.random() - 0.5) * (roomSize - 4);
+        person.position.set(x, 0, z);
+        scene.add(person);
+
+        const npcData = {
+          mesh: person,
+          speed: 0.5 + Math.random() * 0.3,
+          state: 'walking',
+          targetIndex: -1,
+          waitTime: 0,
+          waitDuration: 2 + Math.random() * 3,
+          isChild: false,
+          armPhase: Math.random() * Math.PI * 2,
+          socialTimer: 0,
+          socialState: 'normal'
+        };
+        allNPCs.push(npcData);
+      }
+
+      const childColor = 0x2a8f6f;
+      const child = createRealisticPerson(childColor, true);
+      const xChild = (Math.random() - 0.5) * (roomSize - 4);
+      const zChild = (Math.random() - 0.5) * (roomSize - 4);
+      child.position.set(xChild, 0, zChild);
+      scene.add(child);
+
+      const childData = {
+        mesh: child,
+        speed: 0.9 + Math.random() * 0.3,
+        state: 'walking',
+        targetIndex: -1,
+        waitTime: 0,
+        waitDuration: 1.5 + Math.random() * 2,
+        isChild: true,
+        armPhase: Math.random() * Math.PI * 2,
+        socialTimer: 0,
+        socialState: 'normal'
+      };
+      allNPCs.push(childData);
+
+      allNPCs.forEach(npc => {
+        npc.targetIndex = Math.floor(Math.random() * cuadros.length);
+        const targetPos = cuadros[npc.targetIndex].position;
+        const dir = new THREE.Vector3(targetPos.x - npc.mesh.position.x, 0, targetPos.z - npc.mesh.position.z);
+        if (dir.length() > 0.01) {
+          const angle = Math.atan2(dir.x, dir.z);
+          npc.mesh.rotation.y = angle;
+        }
+      });
+
+      return allNPCs;
+    }
+
+    function updateNPCs(delta) {
+      const limit = roomSize / 2 - 0.8;
+
+      npcs.forEach((npc, index) => {
+        const mesh = npc.mesh;
+        const pos = mesh.position;
+
+        npc.socialTimer += delta;
+        if (npc.socialTimer > 5 + Math.random() * 10 && npc.state === 'looking') {
+          let otherNPC = null;
+          for (let i = 0; i < npcs.length; i++) {
+            if (i !== index) {
+              const dist = pos.distanceTo(npcs[i].mesh.position);
+              if (dist < 4) {
+                otherNPC = npcs[i];
+                break;
+              }
+            }
+          }
+          if (otherNPC) {
+            npc.socialState = 'looking_at_npc';
+            npc.socialTimer = 0;
+            const dir = new THREE.Vector3(otherNPC.mesh.position.x - pos.x, 0, otherNPC.mesh.position.z - pos.z);
+            if (dir.length() > 0.01) {
+              const angle = Math.atan2(dir.x, dir.z);
+              mesh.rotation.y = angle;
+            }
+          }
+        }
+
+        if (npc.socialState === 'looking_at_npc') {
+          npc.waitTime += delta;
+          if (npc.waitTime > 2) {
+            npc.socialState = 'normal';
+            npc.waitTime = 0;
+            let newIndex;
+            do {
+              newIndex = Math.floor(Math.random() * cuadros.length);
+            } while (newIndex === npc.targetIndex && cuadros.length > 1);
+            npc.targetIndex = newIndex;
+            npc.state = 'walking';
+          }
+          return;
+        }
+
+        if (npc.state === 'walking') {
+          const targetIndex = npc.targetIndex;
+          if (targetIndex === -1 || targetIndex >= cuadros.length) {
+            npc.targetIndex = Math.floor(Math.random() * cuadros.length);
+            return;
+          }
+          const targetPos = cuadros[npc.targetIndex].position;
+          const dir = new THREE.Vector3(targetPos.x - pos.x, 0, targetPos.z - pos.z);
+          const dist = dir.length();
+
+          if (dist < 0.4) {
+            npc.state = 'looking';
+            npc.waitTime = 0;
+            const lookDir = new THREE.Vector3(targetPos.x - pos.x, 0, targetPos.z - pos.z);
+            if (lookDir.length() > 0.01) {
+              const angle = Math.atan2(lookDir.x, lookDir.z);
+              mesh.rotation.y = angle;
+            }
+          } else {
+            const speed = npc.speed * delta;
+            const moveVec = dir.normalize().multiplyScalar(speed);
+            pos.x += moveVec.x;
+            pos.z += moveVec.z;
+
+            const targetAngle = Math.atan2(dir.x, dir.z);
+            let currentAngle = mesh.rotation.y;
+            let diff = targetAngle - currentAngle;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            mesh.rotation.y += diff * 0.08;
+
+            const phase = npc.armPhase + performance.now() / 220;
+            const step = Math.sin(phase) * 0.6;
+            const step2 = Math.sin(phase + Math.PI) * 0.6;
+
+            if (mesh.userData.armGroupL) mesh.userData.armGroupL.rotation.x = -step * 0.7;
+            if (mesh.userData.armGroupR) mesh.userData.armGroupR.rotation.x = step * 0.7;
+            if (mesh.userData.legGroupL) mesh.userData.legGroupL.rotation.x = step2 * 0.5;
+            if (mesh.userData.legGroupR) mesh.userData.legGroupR.rotation.x = -step2 * 0.5;
+            if (mesh.userData.torso) mesh.userData.torso.rotation.z = Math.sin(phase) * 0.025;
+            if (mesh.userData.head) mesh.userData.head.rotation.z = Math.sin(phase) * 0.015;
+          }
+        } else if (npc.state === 'looking') {
+          npc.waitTime += delta;
+          if (npc.waitTime >= npc.waitDuration) {
+            let newIndex;
+            do {
+              newIndex = Math.floor(Math.random() * cuadros.length);
+            } while (newIndex === npc.targetIndex && cuadros.length > 1);
+            npc.targetIndex = newIndex;
+            npc.state = 'walking';
+          }
+        }
+
+        pos.x = Math.max(-limit, Math.min(limit, pos.x));
+        pos.z = Math.max(-limit, Math.min(limit, pos.z));
+      });
+    }
+
+    const npcList = createNPCs();
+    npcs.push(...npcList);
+
+    // ================================================================
+    //  RAYCASTER
+    // ================================================================
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2(0, 0);
+    let currentHighlight = null;
+    // Cache de las mallas raycasteables: se recalcula una sola vez (los cuadros
+    // no cambian tras la carga inicial) en lugar de reconstruir el array cada frame.
+    const paintingMeshes = [];
+    cuadros.forEach(group => {
+      group.children.forEach(child => { if (child.isMesh) paintingMeshes.push(child); });
+    });
+
+    function updateHighlight() {
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(paintingMeshes, false);
+      let found = null;
+      if (intersects.length > 0) {
+        let parent = intersects[0].object.parent;
+        while (parent && !cuadros.includes(parent)) parent = parent.parent;
+        if (parent && cuadros.includes(parent)) found = parent;
+      }
+      if (currentHighlight && currentHighlight !== found) {
+        currentHighlight.scale.set(1, 1, 1);
+        const idx = cuadros.indexOf(currentHighlight);
+        if (idx !== -1 && spotLights[idx]) spotLights[idx].intensity = 0.7;
+        currentHighlight = null;
+        infoPanel.classList.remove('visible');
+        currentNarratedIndex = -1;
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+      }
+      if (found) {
+        const idx = cuadros.indexOf(found);
+        if (idx !== -1) {
+          const info = cuadroInfo[idx];
+          found.scale.set(1.08, 1.08, 1.08);
+          if (spotLights[idx]) spotLights[idx].intensity = 1.9;
+          panelTitle.textContent = info.leyenda.titulo;
+          panelDesc.textContent = info.leyenda.desc;
+          infoPanel.classList.add('visible');
+          currentHighlight = found;
+          speakDescription(`${info.leyenda.titulo}. ${info.leyenda.desc}`, idx);
+        }
+      }
+    }
+
+    // ================================================================
+    //  ANIMACIÓN DE ENTRADA
+    // ================================================================
+    let introProgress = 0;
+    let introActive = true;
+    const startPos = new THREE.Vector3(0, 1.7, 15);
+    const endPos = new THREE.Vector3(0, 1.7, 6);
+
+    function introAnimation(time) {
+      if (!introActive) return;
+      introProgress += 0.004;
+      if (introProgress >= 1) {
+        introProgress = 1;
+        introActive = false;
+        clickMsg.classList.add('show');
+        return;
+      }
+      const t = easeInOutCubic(introProgress);
+      camera.position.lerpVectors(startPos, endPos, t);
+      camera.lookAt(0, 2.3, half + 0.2);
+    }
+    function easeInOutCubic(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
+
+    // ================================================================
+    //  MOVIMIENTO TECLADO
+    // ================================================================
+    const moveSpeed = 0.10;
+    const keys = { w: false, a: false, s: false, d: false };
+    document.addEventListener('keydown', (e) => {
+      switch (e.code) {
+        case 'KeyW': keys.w = true; e.preventDefault(); break;
+        case 'KeyA': keys.a = true; e.preventDefault(); break;
+        case 'KeyS': keys.s = true; e.preventDefault(); break;
+        case 'KeyD': keys.d = true; e.preventDefault(); break;
+        default: break;
+      }
+    });
+    document.addEventListener('keyup', (e) => {
+      switch (e.code) {
+        case 'KeyW': keys.w = false; e.preventDefault(); break;
+        case 'KeyA': keys.a = false; e.preventDefault(); break;
+        case 'KeyS': keys.s = false; e.preventDefault(); break;
+        case 'KeyD': keys.d = false; e.preventDefault(); break;
+        default: break;
+      }
+    });
+
+    // ================================================================
+    //  TIMEOUT GLOBAL
+    // ================================================================
+    let loadingTimeout = setTimeout(() => {
+      if (!loadingEl.classList.contains('hidden')) {
+        errorMsg.style.display = 'block';
+        retryBtn.style.display = 'inline-block';
+        loadText.textContent = 'La carga se ha demorado. Puedes continuar.';
+        progressFill.style.width = '100%';
+        retryBtn.onclick = () => {
+          loadingEl.classList.add('hidden');
+          clickMsg.classList.add('show');
+        };
+      }
+    }, 12000);
+
+    // ================================================================
+    //  BUCLE PRINCIPAL
+    // ================================================================
+    const clock = new THREE.Clock();
+
+    // Medición de FPS ligera (suavizada), solo actualiza el DOM 2 veces/segundo
+    // para no añadir coste de layout en cada frame.
+    let fpsAccum = 0;
+    let fpsFrames = 0;
+    let fpsTimer = 0;
+
+    function animate() {
+      const delta = Math.min(clock.getDelta(), 0.1);
+      const elapsed = clock.getElapsedTime();
+
+      // Partículas
+      const posAttr = particles.geometry.attributes.position;
+      const arr = posAttr.array;
+      for (let i = 0; i < particleCount; i++) {
+        const idx = i * 3;
+        arr[idx] += Math.sin(elapsed * 0.3 + particleData.offsets[idx]) * 0.002;
+        arr[idx+1] += Math.sin(elapsed * 0.5 + particleData.offsets[idx+1]) * 0.002;
+        arr[idx+2] += Math.cos(elapsed * 0.4 + particleData.offsets[idx+2]) * 0.002;
+        const limit = 8;
+        if (Math.abs(arr[idx]) > limit) arr[idx] *= 0.99;
+        if (Math.abs(arr[idx+2]) > limit) arr[idx+2] *= 0.99;
+        if (arr[idx+1] < 0.5) arr[idx+1] = 0.5;
+        if (arr[idx+1] > 4.0) arr[idx+1] = 4.0;
+      }
+      posAttr.needsUpdate = true;
+
+      pointLight.intensity = 1.1 + Math.sin(elapsed * 1.2) * 0.18;
+      updateNPCs(delta);
+
+      if (controls.isLocked && !introActive) {
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+        forward.y = 0; right.y = 0;
+        forward.normalize(); right.normalize();
+        const moveVec = new THREE.Vector3(0, 0, 0);
+        if (keys.w) moveVec.add(forward);
+        if (keys.s) moveVec.sub(forward);
+        if (keys.a) moveVec.sub(right);
+        if (keys.d) moveVec.add(right);
+        if (moveVec.length() > 0) {
+          moveVec.normalize().multiplyScalar(moveSpeed);
+          camera.position.add(moveVec);
+        }
+        const margin = 0.8;
+        const limit = roomSize/2 - margin;
+        camera.position.x = Math.max(-limit, Math.min(limit, camera.position.x));
+        camera.position.z = Math.max(-limit, Math.min(limit, camera.position.z));
+        camera.position.y = 1.7;
+      }
+
+      if (!introActive) updateHighlight();
+      if (introActive) introAnimation(elapsed);
+
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+
+      // FPS discreto (promedio cada 0.5s)
+      fpsFrames++;
+      fpsTimer += delta;
+      if (fpsTimer >= 0.5) {
+        const fps = Math.round(fpsFrames / fpsTimer);
+        perfBadge.textContent = `FPS: ${fps}`;
+        fpsFrames = 0;
+        fpsTimer = 0;
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // ================================================================
+    //  INICIO
+    // ================================================================
+    clearTimeout(loadingTimeout);
+    loadingEl.classList.add('hidden');
+    setTimeout(() => {
+      if (!controls.isLocked) {
+        clickMsg.classList.add('show');
+      }
+    }, 500);
+
+    animate();
+
+    // ================================================================
+    //  REDIMENSIONAR
+    // ================================================================
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      labelRenderer.setSize(w, h);
+    });
+
+    console.log('🏛️ Museo 3D refactorizado: assets compartidos, iluminación cálida y ambientación añadida.');
+  </script>
+</body>
+</html>
