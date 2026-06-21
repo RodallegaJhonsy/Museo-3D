@@ -1,15 +1,7 @@
 {
-  "buildCommand": "echo 'Static files ready for deployment'",
-  "outputDirectory": ".",
-  "routes": [
-    {
-      "src": "^/(?!.*\\.).*$",
-      "destination": "/Index.html"
-    }
-  ],
   "rewrites": [
     {
-      "source": "/(?!.*\\.).*",
+      "source": "/(.*)",
       "destination": "/Index.html"
     }
   ]
